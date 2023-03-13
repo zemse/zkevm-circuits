@@ -37,7 +37,8 @@ pub struct Access {
 }
 
 impl Access {
-    pub(crate) fn new(step_index: Option<usize>, rw: RW, value: AccessValue) -> Self {
+    /// Create a new Access
+    pub fn new(step_index: Option<usize>, rw: RW, value: AccessValue) -> Self {
         Self {
             step_index,
             rw,
