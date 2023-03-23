@@ -182,7 +182,7 @@ impl Block {
         }
     }
     /// Create a new block.
-    pub fn new<TX>(
+    pub fn new(
         chain_id: Word,
         history_hashes: Vec<Word>,
         eth_block: &eth_types::Block<eth_types::Transaction>,

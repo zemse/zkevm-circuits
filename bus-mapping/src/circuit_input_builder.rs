@@ -10,7 +10,7 @@ mod input_state_ref;
 mod tracer_tests;
 mod transaction;
 
-use self::access::gen_state_access_trace;
+pub use self::access::gen_state_access_trace;
 pub use self::block::BlockHead;
 use crate::error::Error;
 use crate::evm::opcodes::{gen_associated_ops, gen_begin_tx_ops, gen_end_tx_ops};
