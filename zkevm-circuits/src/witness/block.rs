@@ -49,6 +49,8 @@ pub struct Block<F> {
     pub keccak_inputs: Vec<Vec<u8>>,
     /// Original Block from geth
     pub eth_block: eth_types::Block<eth_types::Transaction>,
+    /// Challange slot index
+    pub challenge_rw_index: Option<usize>,
 }
 
 impl<F: Field> Block<F> {
@@ -268,5 +270,6 @@ pub fn block_convert<F: Field>(
         prev_state_root: block.prev_state_root,
         keccak_inputs: circuit_input_builder::keccak_inputs(block, code_db)?,
         eth_block: block.eth_block.clone(),
+        challenge_rw_index: None,
     })
 }

@@ -5,13 +5,13 @@ use std::marker::PhantomData;
 use eth_types::{
     geth_types::{BlockConstants, Transaction},
     sign_types::SignData,
-    Address, BigEndianHash, Field, ToBigEndian, ToLittleEndian, ToScalar, Word, H256,
+    Address, BigEndianHash, Field, ToBigEndian, ToLittleEndian, ToScalar, Word, H256, U256,
 };
 use halo2_proofs::plonk::{Instance, SecondPhase};
 use keccak256::plain::Keccak;
 
 use crate::{
-    table::{BlockTable, LookupTable, TxFieldTag, TxTable},
+    table::{BlockTable, LookupTable, RwTableTag, TxFieldTag, TxTable},
     tx_circuit::TX_LEN,
     util::{random_linear_combine_word as rlc, Challenges, SubCircuit, SubCircuitConfig},
     witness,
@@ -31,7 +31,7 @@ use halo2_proofs::{circuit::SimpleFloorPlanner, plonk::Circuit};
 
 /// Fixed by the spec
 const BLOCK_LEN: usize = 7 + 256;
-const EXTRA_LEN: usize = 2;
+const EXTRA_LEN: usize = 4;
 const ZERO_BYTE_GAS_COST: u64 = 4;
 const NONZERO_BYTE_GAS_COST: u64 = 16;
 
@@ -69,6 +69,8 @@ pub struct ExtraValues {
     // block_hash: H256,
     state_root: H256,
     prev_state_root: H256,
+    challenge_address: Address,
+    challenge_slot: U256,
 }
 
 /// PublicData contains all the values that the PiCircuit recieves as input
@@ -87,6 +89,10 @@ pub struct PublicData {
     pub prev_state_root: H256,
     /// Constants related to Ethereum block
     pub block_constants: BlockConstants,
+    /// Challenge address
+    pub challenge_address: Address,
+    /// Challenge slot
+    pub challenge_slot: U256,
 }
 
 impl Default for PublicData {
@@ -98,6 +104,8 @@ impl Default for PublicData {
             state_root: H256::zero(),
             prev_state_root: H256::zero(),
             block_constants: BlockConstants::default(),
+            challenge_address: Address::zero(),
+            challenge_slot: U256::zero(),
         }
     }
 }
@@ -166,6 +174,8 @@ impl PublicData {
             // block_hash: self.hash.unwrap_or_else(H256::zero),
             state_root: self.state_root,
             prev_state_root: self.prev_state_root,
+            challenge_address: self.challenge_address,
+            challenge_slot: self.challenge_slot,
         }
     }
 
@@ -200,7 +210,7 @@ pub struct PiCircuitConfig<F: Field> {
     q_not_end: Selector,
     q_end: Selector,
 
-    pi: Column<Instance>, // rpi_rand, rpi_rlc, chain_ID, state_root, prev_state_root
+    pi: Column<Instance>, // rpi_rand, rpi_rlc, chain_ID, state_root, prev_state_root, challenge
 
     _marker: PhantomData<F>,
     // External tables
@@ -566,6 +576,7 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
     }
 }
 
+//
 impl<F: Field> PiCircuitConfig<F> {
     /// Return the number of rows in the circuit
     #[inline]
@@ -1005,7 +1016,7 @@ impl<F: Field> PiCircuitConfig<F> {
         extra: ExtraValues,
         randomness: F,
         raw_pi_vals: &mut [F],
-    ) -> Result<[AssignedCell<F, F>; 2], Error> {
+    ) -> Result<[AssignedCell<F, F>; 4], Error> {
         let mut offset = BLOCK_LEN + 1;
         // block hash
         // let block_hash = rlc(extra.block_hash.to_fixed_bytes(), randomness);
@@ -1038,7 +1049,39 @@ impl<F: Field> PiCircuitConfig<F> {
             || Value::known(prev_state_root),
         )?;
         raw_pi_vals[offset] = prev_state_root;
-        Ok([state_root_cell, prev_state_root_cell])
+        offset += 1;
+
+        // challenge address
+        let challenge_address = rlc(
+            U256::from_big_endian(extra.challenge_address.to_fixed_bytes().as_slice())
+                .to_be_bytes(),
+            randomness,
+        );
+        let challenge_address_cell = region.assign_advice(
+            || "challenge_address",
+            self.raw_public_inputs,
+            offset,
+            || Value::known(challenge_address),
+        )?;
+        raw_pi_vals[offset] = challenge_address;
+        offset += 1;
+
+        // challenge slot
+        let challenge_slot = rlc(extra.challenge_slot.to_be_bytes(), randomness);
+        let challenge_slot_cell = region.assign_advice(
+            || "challenge_slot",
+            self.raw_public_inputs,
+            offset,
+            || Value::known(challenge_slot),
+        )?;
+        raw_pi_vals[offset] = challenge_slot;
+
+        Ok([
+            state_root_cell,
+            prev_state_root_cell,
+            challenge_address_cell,
+            challenge_slot_cell,
+        ])
     }
 
     /// Assign `rpi_rlc_acc` and `rand_rpi` columns
@@ -1140,6 +1183,12 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
     type Config = PiCircuitConfig<F>;
 
     fn new_from_block(block: &witness::Block<F>) -> Self {
+        let rw = block.rws[(
+            RwTableTag::AccountStorage,
+            block
+                .challenge_rw_index
+                .expect("challenge_rw_index not passed"),
+        )];
         let public_data = PublicData {
             chain_id: block.context.chain_id,
             history_hashes: block.context.history_hashes.clone(),
@@ -1154,6 +1203,8 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                 gas_limit: block.context.gas_limit.into(),
                 base_fee: block.context.base_fee,
             },
+            challenge_address: rw.address().unwrap(),
+            challenge_slot: rw.storage_key().unwrap(),
         };
         let rand_rpi = gen_rand_rpi::<F>(
             block.circuits_params.max_txs,
@@ -1221,6 +1272,20 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                 self.public_data.prev_state_root.to_fixed_bytes(),
                 self.randomness,
             ),
+            rlc(
+                U256::from_big_endian(
+                    self.public_data
+                        .challenge_address
+                        .to_fixed_bytes()
+                        .as_slice(),
+                )
+                .to_be_bytes(),
+                self.randomness,
+            ),
+            rlc(
+                self.public_data.challenge_slot.to_be_bytes(),
+                self.randomness,
+            ),
         ];
 
         vec![public_inputs]
@@ -1284,12 +1349,13 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
 
                 // Assign extra fields
                 let extra_vals = self.public_data.get_extra_values();
-                let [state_root, prev_state_root] = config.assign_extra_fields(
-                    &mut region,
-                    extra_vals,
-                    self.randomness,
-                    &mut raw_pi_vals,
-                )?;
+                let [state_root, prev_state_root, challenge_address, challenge_slot] = config
+                    .assign_extra_fields(
+                        &mut region,
+                        extra_vals,
+                        self.randomness,
+                        &mut raw_pi_vals,
+                    )?;
 
                 let mut offset = 0;
                 // Assign Tx table
@@ -1429,6 +1495,8 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                     chain_id,
                     state_root,
                     prev_state_root,
+                    challenge_address,
+                    challenge_slot,
                 ])
             },
         )?;
@@ -1579,6 +1647,12 @@ fn raw_public_inputs_col<F: Field>(
     result[BLOCK_LEN + 1] = rlc(extra.state_root.to_fixed_bytes(), randomness);
     // parent block hash
     result[BLOCK_LEN + 2] = rlc(extra.prev_state_root.to_fixed_bytes(), randomness);
+    // challenge address
+    result[BLOCK_LEN + 3] = rlc(
+        U256::from_big_endian(extra.challenge_address.to_fixed_bytes().as_slice()).to_be_bytes(),
+        randomness,
+    );
+    result[BLOCK_LEN + 4] = rlc(extra.challenge_slot.to_be_bytes(), randomness);
 
     // Insert Tx table
     offset = 0;
