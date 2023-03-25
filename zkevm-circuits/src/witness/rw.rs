@@ -25,6 +25,15 @@ impl std::ops::Index<(RwTableTag, usize)> for RwMap {
         &self.0.get(&tag).unwrap()[idx]
     }
 }
+
+impl std::ops::Index<RwTableTag> for RwMap {
+    type Output = Vec<Rw>;
+
+    fn index(&self, tag: RwTableTag) -> &Vec<Rw> {
+        &self.0.get(&tag).unwrap()
+    }
+}
+
 impl RwMap {
     /// Check rw_counter is continuous and starting from 1
     pub fn check_rw_counter_sanity(&self) {
@@ -495,7 +504,7 @@ impl Rw {
         }
     }
 
-    pub(crate) fn address(&self) -> Option<Address> {
+    pub fn address(&self) -> Option<Address> {
         match self {
             Self::TxAccessListAccount {
                 account_address, ..
@@ -545,7 +554,7 @@ impl Rw {
         }
     }
 
-    pub(crate) fn storage_key(&self) -> Option<Word> {
+    pub fn storage_key(&self) -> Option<Word> {
         match self {
             Self::AccountStorage { storage_key, .. }
             | Self::TxAccessListAccountStorage { storage_key, .. } => Some(*storage_key),
