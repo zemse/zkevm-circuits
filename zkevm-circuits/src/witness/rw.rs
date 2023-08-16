@@ -40,7 +40,7 @@ impl std::ops::Index<Target> for RwMap {
     type Output = Vec<Rw>;
 
     fn index(&self, target: Target) -> &Vec<Rw> {
-        &self.0.get(&target).unwrap()
+        self.0.get(&target).unwrap()
     }
 }
 
@@ -506,6 +506,7 @@ impl Rw {
         }
     }
 
+    /// Address
     pub fn address(&self) -> Option<Address> {
         match self {
             Self::TxAccessListAccount {
@@ -556,6 +557,7 @@ impl Rw {
         }
     }
 
+    /// Storage key
     pub fn storage_key(&self) -> Option<Word> {
         match self {
             Self::AccountStorage { storage_key, .. }
