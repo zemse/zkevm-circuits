@@ -24,7 +24,7 @@ pub use keccak::{keccak256, Keccak};
 
 pub use bytecode::Bytecode;
 pub use error::Error;
-use halo2_proofs::halo2curves::{
+pub use halo2_proofs::halo2curves::{
     bn256::{Fq, Fr},
     ff::{Field as Halo2Field, FromUniformBytes, PrimeField},
 };
