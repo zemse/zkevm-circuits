@@ -25,7 +25,7 @@ use core::fmt::Debug;
 use eth_types::{
     self, geth_types,
     sign_types::{pk_bytes_le, pk_bytes_swap_endianness, SignData},
-    Address, GethExecStep, GethExecTrace, ToWord, Word,
+    Address, Bytes, GethExecStep, GethExecTrace, ToWord, Word,
 };
 use ethers_providers::JsonRpcClient;
 pub use execution::{
@@ -701,7 +701,13 @@ impl<P: JsonRpcClient> BuilderClient<P> {
         history_hashes: Vec<Word>,
         prev_state_root: Word,
     ) -> Result<CircuitInputBuilder<FixedCParams>, Error> {
-        let block = Block::new(self.chain_id, history_hashes, prev_state_root, eth_block)?;
+        let block = Block::new(
+            self.chain_id,
+            history_hashes,
+            prev_state_root,
+            eth_block,
+            Bytes::default(),
+        )?;
         let mut builder = CircuitInputBuilder::new(sdb, code_db, block, self.circuits_params);
         builder.handle_block(eth_block, geth_traces)?;
         Ok(builder)

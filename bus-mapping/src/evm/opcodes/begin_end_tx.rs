@@ -3,7 +3,7 @@ use crate::{
     circuit_input_builder::{CircuitInputStateRef, ExecState, ExecStep},
     operation::{AccountField, AccountOp, CallContextField, TxReceiptField, TxRefundOp, RW},
     state_db::CodeDB,
-    Error,
+    Error, POX_CHALLENGE_ADDRESS,
 };
 use eth_types::{
     evm_types::{GasCost, MAX_REFUND_QUOTIENT_OF_GAS_USED},
@@ -32,6 +32,20 @@ impl TxExecSteps for BeginEndTx {
 fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Error> {
     let mut exec_step = state.new_begin_tx_step();
     let call = state.call()?.clone();
+
+    let (found, pox_challenge_account) = state.sdb.get_account(&POX_CHALLENGE_ADDRESS);
+    if !found {
+        return Err(Error::AccountNotFound(POX_CHALLENGE_ADDRESS));
+    }
+    if pox_challenge_account.is_empty() {
+        state.account_write(
+            &mut exec_step,
+            POX_CHALLENGE_ADDRESS,
+            AccountField::CodeHash,
+            state.block.pox_challenge_bytecode_hash.to_word(),
+            Word::zero(),
+        )?;
+    }
 
     for (field, value) in [
         (CallContextField::TxId, state.tx_ctx.id().into()),

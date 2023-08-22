@@ -27,7 +27,7 @@ use crate::{
         Expr,
     },
 };
-use bus_mapping::state_db::CodeDB;
+use bus_mapping::{state_db::CodeDB, POX_CHALLENGE_ADDRESS};
 use eth_types::{evm_types::GasCost, keccak256, Field, ToWord, U256};
 use halo2_proofs::{
     circuit::Value,
@@ -65,6 +65,8 @@ pub(crate) struct BeginTxGadget<F> {
     // coinbase, and may be duplicate.
     // <https://github.com/ethereum/go-ethereum/blob/604e215d1bb070dff98fb76aa965064c74e3633f/core/state/statedb.go#LL1119C9-L1119C9>
     is_coinbase_warm: Cell<F>,
+    // POX Challenge
+    pox_challenge_code_hash: WordCell<F>,
 }
 
 impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
@@ -75,6 +77,20 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
     fn configure(cb: &mut EVMConstraintBuilder<F>) -> Self {
         // Use rw_counter of the step which triggers next call as its call_id.
         let call_id = cb.curr.state.rw_counter.clone();
+
+        // TODO maybe load constant from fixed column ??
+        let pox_challenge_address =
+            Word::<F>::from(POX_CHALLENGE_ADDRESS).map(|x| Expression::Constant(x));
+        let pox_challenge_code_hash = cb.query_word_unchecked();
+
+        cb.account_write(
+            pox_challenge_address,
+            AccountFieldTag::CodeHash,
+            // Word::from_lo_unchecked(value.expr()),
+            pox_challenge_code_hash.to_word(),
+            Word::from_lo_unchecked(0.expr()),
+            None,
+        );
 
         let tx_id = cb.query_cell(); // already constrain `if step_first && tx_id = 1` and `tx_id += 1` at EndTx
 
@@ -338,7 +354,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                 //   - Write CallContext IsRoot
                 //   - Write CallContext IsCreate
                 //   - Write CallContext CodeHash
-                rw_counter: Delta(22.expr() + transfer_with_gas_fee.rw_delta()),
+                rw_counter: Delta(1.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
                 call_id: To(call_id.expr()),
                 is_root: To(true.expr()),
                 is_create: To(tx_is_create.expr()),
@@ -382,7 +398,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                     //   - Write TxAccessListAccount (Coinbase) for EIP-3651
                     //   - Read Account CodeHash
                     //   - a TransferWithGasFeeGadget
-                    rw_counter: Delta(9.expr() + transfer_with_gas_fee.rw_delta()),
+                    rw_counter: Delta(1.expr() + 9.expr() + transfer_with_gas_fee.rw_delta()),
                     call_id: To(call_id.expr()),
                     ..StepStateTransition::any()
                 });
@@ -455,7 +471,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                     //   - Write CallContext IsRoot
                     //   - Write CallContext IsCreate
                     //   - Write CallContext CodeHash
-                    rw_counter: Delta(22.expr() + transfer_with_gas_fee.rw_delta()),
+                    rw_counter: Delta(1.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
                     call_id: To(call_id.expr()),
                     is_root: To(true.expr()),
                     is_create: To(tx_is_create.expr()),
@@ -493,6 +509,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             is_caller_callee_equal,
             coinbase,
             is_coinbase_warm,
+            pox_challenge_code_hash,
         }
     }
 
@@ -509,7 +526,12 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
         let zero = eth_types::Word::zero();
 
         let mut rws = StepRws::new(block, step);
-        rws.offset_add(7);
+
+        let pox_challenge_code_hash = rws.next().value_assignment();
+        self.pox_challenge_code_hash
+            .assign_u256(region, offset, pox_challenge_code_hash)?;
+
+        rws.offset_add(7 + 1);
 
         let is_coinbase_warm = rws.next().tx_access_list_value_pair().1;
         let mut callee_code_hash = zero;

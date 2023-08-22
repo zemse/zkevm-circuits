@@ -7,7 +7,7 @@ use crate::{
     },
     state_db::{self, CodeDB, StateDB},
 };
-use eth_types::{geth_types::GethData, Word};
+use eth_types::{geth_types::GethData, Bytes, Word};
 
 /// BlockData is a type that contains all the information from a block required
 /// to build the circuit inputs.
@@ -42,6 +42,7 @@ impl<C: CircuitsParams> BlockData<C> {
                 self.history_hashes.clone(),
                 Word::default(),
                 &self.eth_block,
+                Bytes::default(),
             )
             .unwrap(),
             self.circuits_params,

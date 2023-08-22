@@ -5,7 +5,8 @@ use crate::{
     operation::{OperationContainer, RWCounter},
     Error,
 };
-use eth_types::{evm_unimplemented, Address, Word};
+use core::slice::SlicePattern;
+use eth_types::{evm_unimplemented, keccak256, Address, Bytes, Word};
 use std::collections::HashMap;
 
 /// Context of a [`Block`] which can mutate in a [`Transaction`].
@@ -86,6 +87,10 @@ pub struct Block {
     pub exp_events: Vec<ExpEvent>,
     /// Original block from geth
     pub eth_block: eth_types::Block<eth_types::Transaction>,
+    /// POX challenge bytecode hash
+    pub pox_challenge_bytecode_hash: Word,
+    /// POX challenge bytecode
+    pub pox_challenge_bytecode: Bytes,
 }
 
 impl Block {
@@ -95,6 +100,7 @@ impl Block {
         history_hashes: Vec<Word>,
         prev_state_root: Word,
         eth_block: &eth_types::Block<eth_types::Transaction>,
+        pox_challenge_bytecode: Bytes,
     ) -> Result<Self, Error> {
         if eth_block.base_fee_per_gas.is_none() {
             // FIXME: resolve this once we have proper EIP-1559 support
@@ -135,6 +141,8 @@ impl Block {
             exp_events: Vec::new(),
             sha3_inputs: Vec::new(),
             eth_block: eth_block.clone(),
+            pox_challenge_bytecode_hash: keccak256(pox_challenge_bytecode.as_slice()).into(),
+            pox_challenge_bytecode,
         })
     }
 
