@@ -765,6 +765,7 @@ impl<F: Field> BytecodeCircuitConfig<F> {
 /// BytecodeCircuit
 #[derive(Clone, Default, Debug)]
 pub struct BytecodeCircuit<F: Field> {
+    #[allow(dead_code)]
     pub(crate) bytecodes: CodeDB,
     /// Unrolled bytecodes
     pub(crate) rows: BytecodeCircuitAssignment<F>,
