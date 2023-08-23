@@ -169,6 +169,17 @@ impl<'a> CircuitInputStateRef<'a> {
         self.push_op(step, RW::WRITE, op);
     }
 
+    /// Transactions and their internal calls are populated in advance and
+    /// any changes to code_hash during the block are not reflected.
+    pub fn tx_patch(&mut self) {
+        for call in self.tx.calls.iter_mut() {
+            let (found, account) = self.sdb.get_account(&call.address);
+            if found {
+                call.code_hash = account.code_hash;
+            }
+        }
+    }
+
     /// Push an [`Operation`](crate::operation::Operation) with reversible to be
     /// true into the
     /// [`OperationContainer`](crate::operation::OperationContainer) with the

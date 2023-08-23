@@ -31,21 +31,23 @@ impl TxExecSteps for BeginEndTx {
 
 fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Error> {
     let mut exec_step = state.new_begin_tx_step();
-    let call = state.call()?.clone();
 
-    let (found, pox_challenge_account) = state.sdb.get_account(&POX_CHALLENGE_ADDRESS);
+    let (found, _) = state.sdb.get_account(&POX_CHALLENGE_ADDRESS);
     if !found {
         return Err(Error::AccountNotFound(POX_CHALLENGE_ADDRESS));
     }
-    if pox_challenge_account.is_empty() {
-        state.account_write(
-            &mut exec_step,
-            POX_CHALLENGE_ADDRESS,
-            AccountField::CodeHash,
-            state.block.pox_challenge_bytecode_hash.to_word(),
-            Word::zero(),
-        )?;
-    }
+    // update pox challenge account with bytecode
+    state.account_write(
+        &mut exec_step,
+        POX_CHALLENGE_ADDRESS,
+        AccountField::CodeHash,
+        state.block.pox_challenge_bytecode_hash.to_word(),
+        Word::zero(),
+    )?;
+    // the above updates sdb but old code_hash still stays hanging in the state.tx
+    state.tx_patch();
+
+    let call = state.call()?.clone();
 
     for (field, value) in [
         (CallContextField::TxId, state.tx_ctx.id().into()),
