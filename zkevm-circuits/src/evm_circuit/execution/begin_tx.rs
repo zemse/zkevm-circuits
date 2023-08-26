@@ -66,7 +66,7 @@ pub(crate) struct BeginTxGadget<F> {
     // <https://github.com/ethereum/go-ethereum/blob/604e215d1bb070dff98fb76aa965064c74e3633f/core/state/statedb.go#LL1119C9-L1119C9>
     is_coinbase_warm: Cell<F>,
     // POX Challenge
-    pox_challenge_code_hash: WordCell<F>,
+    pox_challenge_codehash: WordCell<F>,
 }
 
 impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
@@ -81,13 +81,12 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
         // TODO maybe load constant from fixed column ??
         let pox_challenge_address =
             Word::<F>::from(POX_CHALLENGE_ADDRESS).map(|x| Expression::Constant(x));
-        let pox_challenge_code_hash = cb.query_word_unchecked();
+        let pox_challenge_codehash = cb.query_word_unchecked();
 
         cb.account_write(
             pox_challenge_address,
             AccountFieldTag::CodeHash,
-            // Word::from_lo_unchecked(value.expr()),
-            pox_challenge_code_hash.to_word(),
+            pox_challenge_codehash.to_word(),
             Word::from_lo_unchecked(0.expr()),
             None,
         );
@@ -509,7 +508,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             is_caller_callee_equal,
             coinbase,
             is_coinbase_warm,
-            pox_challenge_code_hash,
+            pox_challenge_codehash,
         }
     }
 
@@ -527,9 +526,9 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
 
         let mut rws = StepRws::new(block, step);
 
-        let pox_challenge_code_hash = rws.next().value_assignment();
-        self.pox_challenge_code_hash
-            .assign_u256(region, offset, pox_challenge_code_hash)?;
+        let pox_challenge_codehash = rws.next().value_assignment();
+        self.pox_challenge_codehash
+            .assign_u256(region, offset, pox_challenge_codehash)?;
 
         rws.offset_add(7 + 1);
 

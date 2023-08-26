@@ -1,9 +1,10 @@
 use super::{PiCircuit, PiCircuitConfig, PiCircuitConfigArgs};
 
 use eth_types::{self, Field};
+use rw_table::RwTable;
 
 use crate::{
-    table::{BlockTable, KeccakTable, TxTable},
+    table::{rw_table, BlockTable, KeccakTable, TxTable},
     util::{Challenges, SubCircuit, SubCircuitConfig},
 };
 use halo2_proofs::{
@@ -38,6 +39,7 @@ impl<F: Field> Circuit<F> for PiCircuit<F> {
 
     fn configure_with_params(meta: &mut ConstraintSystem<F>, params: Self::Params) -> Self::Config {
         let block_table = BlockTable::construct(meta);
+        let rw_table = RwTable::construct(meta);
         let tx_table = TxTable::construct(meta);
         let keccak_table = KeccakTable::construct(meta);
         let challenges = Challenges::construct(meta);
@@ -48,6 +50,7 @@ impl<F: Field> Circuit<F> for PiCircuit<F> {
                 PiCircuitConfigArgs {
                     max_txs: params.max_txs,
                     max_calldata: params.max_calldata,
+                    rw_table,
                     block_table,
                     tx_table,
                     keccak_table,

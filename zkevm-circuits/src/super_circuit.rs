@@ -159,6 +159,7 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
             PiCircuitConfigArgs {
                 max_txs,
                 max_calldata,
+                rw_table,
                 block_table: block_table.clone(),
                 tx_table: tx_table.clone(),
                 keccak_table: keccak_table.clone(),

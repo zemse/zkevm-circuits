@@ -50,6 +50,8 @@ pub struct Block<F> {
     pub keccak_inputs: Vec<Vec<u8>>,
     /// Original Block from geth
     pub eth_block: eth_types::Block<eth_types::Transaction>,
+    /// POX challenge bytecode hash
+    pub pox_challenge_codehash: Word,
 }
 
 impl<F: Field> Block<F> {
@@ -256,6 +258,7 @@ pub fn block_convert<F: Field>(
         prev_state_root: block.prev_state_root,
         keccak_inputs: circuit_input_builder::keccak_inputs(block, code_db)?,
         eth_block: block.eth_block.clone(),
+        pox_challenge_codehash: block.pox_challenge_codehash,
     };
     let public_data = public_data_convert(&block);
     let rpi_bytes = public_data.get_pi_bytes(

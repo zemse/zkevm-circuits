@@ -41,7 +41,7 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
         &mut exec_step,
         POX_CHALLENGE_ADDRESS,
         AccountField::CodeHash,
-        state.block.pox_challenge_bytecode_hash.to_word(),
+        state.block.pox_challenge_codehash.to_word(),
         Word::zero(),
     )?;
     // the above updates sdb but old code_hash still stays hanging in the state.tx

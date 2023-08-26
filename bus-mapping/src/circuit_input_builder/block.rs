@@ -88,7 +88,7 @@ pub struct Block {
     /// Original block from geth
     pub eth_block: eth_types::Block<eth_types::Transaction>,
     /// POX challenge bytecode hash
-    pub pox_challenge_bytecode_hash: Word,
+    pub pox_challenge_codehash: Word,
     /// POX challenge bytecode
     pub pox_challenge_bytecode: Bytes,
 }
@@ -141,7 +141,7 @@ impl Block {
             exp_events: Vec::new(),
             sha3_inputs: Vec::new(),
             eth_block: eth_block.clone(),
-            pox_challenge_bytecode_hash: keccak256(pox_challenge_bytecode.as_slice()).into(),
+            pox_challenge_codehash: keccak256(pox_challenge_bytecode.as_slice()).into(),
             pox_challenge_bytecode,
         })
     }

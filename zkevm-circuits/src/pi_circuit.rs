@@ -30,7 +30,7 @@ use crate::{
         public_data_convert, BlockValues, ExtraValues, PublicData, TxValues, NONZERO_BYTE_GAS_COST,
         ZERO_BYTE_GAS_COST,
     },
-    table::{BlockTable, KeccakTable, LookupTable, TxFieldTag, TxTable},
+    table::{BlockTable, KeccakTable, LookupTable, RwTable, TxFieldTag, TxTable},
     tx_circuit::TX_LEN,
     util::{word::Word, Challenges, SubCircuit, SubCircuitConfig},
     witness,
@@ -98,9 +98,13 @@ pub struct PiCircuitConfig<F: Field> {
 
     q_rpi_byte_enable: Selector,
 
+    // q_pox_challenge_codehash: 1 on the row of challenge codehash in block table
+    q_pox_challenge_codehash: Selector,
+
     pi_instance: Column<Instance>, // keccak_digest_hi, keccak_digest_lo
 
     _marker: PhantomData<F>,
+
     // External tables
     block_table: BlockTable,
     tx_table: TxTable,
@@ -113,6 +117,8 @@ pub struct PiCircuitConfigArgs<F: Field> {
     pub max_txs: usize,
     /// Max number of supported calldata bytes
     pub max_calldata: usize,
+    /// RwTable
+    pub rw_table: RwTable,
     /// TxTable
     pub tx_table: TxTable,
     /// BlockTable
@@ -132,6 +138,7 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
         Self::ConfigArgs {
             max_txs,
             max_calldata,
+            rw_table,
             block_table,
             tx_table,
             keccak_table,
@@ -161,6 +168,8 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
         let q_digest_last = meta.complex_selector();
         let q_bytes_last = meta.complex_selector();
         let q_rpi_byte_enable = meta.complex_selector();
+        let q_pox_challenge_codehash = meta.complex_selector();
+
         let q_rpi_value_start = meta.fixed_column();
         let q_digest_value_start = meta.fixed_column();
 
@@ -478,6 +487,32 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
             ]
         });
 
+        meta.lookup_any(
+            "lookup pox challenge bytecode hash in the rw table",
+            |meta| {
+                let selector = meta.query_selector(q_pox_challenge_codehash);
+
+                // data assigned in block table and exposed to public inputs
+                let codehash_block_hi = meta.query_advice(block_table.value.hi(), Rotation::cur());
+                let codehash_block_lo = meta.query_advice(block_table.value.lo(), Rotation::cur());
+
+                // table expression
+                let rw_counter = meta.query_advice(rw_table.rw_counter, Rotation::cur());
+                let rw_tag = meta.query_advice(rw_table.tag, Rotation::cur());
+                let rw_field_tag = meta.query_advice(rw_table.field_tag, Rotation::cur());
+                let codehash_rw_hi = meta.query_advice(rw_table.value.hi(), Rotation::cur());
+                let codehash_rw_lo = meta.query_advice(rw_table.value.lo(), Rotation::cur());
+
+                vec![
+                    (selector.expr() * 1.expr(), rw_counter),   // First RW
+                    (selector.expr() * 8.expr(), rw_tag),       // Account
+                    (selector.expr() * 3.expr(), rw_field_tag), // Account CodeHash
+                    (selector.expr() * codehash_block_hi, codehash_rw_hi),
+                    (selector.expr() * codehash_block_lo, codehash_rw_lo),
+                ]
+            },
+        );
+
         Self {
             max_txs,
             max_calldata,
@@ -504,6 +539,7 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
             rpi_digest_bytes,
             rpi_digest_bytes_limbs,
             q_rpi_byte_enable,
+            q_pox_challenge_codehash,
             pi_instance,
             _marker: PhantomData,
         }
@@ -997,6 +1033,7 @@ impl<F: Field> PiCircuitConfig<F> {
         current_offset: &mut usize,
         rpi_bytes: &mut [u8],
         zero_cell: AssignedCell<F, F>,
+        q_pox_challenge_codehash: Selector,
     ) -> Result<(), Error> {
         let mut block_copy_cells = vec![];
 
@@ -1175,6 +1212,34 @@ impl<F: Field> PiCircuitConfig<F> {
             block_copy_cells.push((block_value, word));
             *block_table_offset += 1;
         }
+
+        // pox challenge bytecode hash
+        q_pox_challenge_codehash.enable(region, *block_table_offset)?;
+        let block_value = Word::from(block_values.pox_challenge_codehash)
+            .into_value()
+            .assign_advice(
+                region,
+                || "pox_challenge_codehash",
+                self.block_table.value,
+                *block_table_offset,
+            )?;
+        let (_, word) = self.assign_raw_bytes(
+            region,
+            &block_values
+                .pox_challenge_codehash
+                .to_fixed_bytes()
+                .iter()
+                .copied()
+                .rev()
+                .collect_vec(),
+            rpi_bytes_keccakrlc,
+            rpi_bytes,
+            current_offset,
+            challenges,
+            zero_cell,
+        )?;
+        block_copy_cells.push((block_value, word));
+        *block_table_offset += 1;
 
         block_copy_cells.iter().try_for_each(|(left, right)| {
             region.constrain_equal(left.lo().cell(), right.lo().cell())?;
@@ -1434,6 +1499,7 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                     &mut current_offset,
                     &mut rpi_bytes,
                     zero_cell.clone(),
+                    config.q_pox_challenge_codehash,
                 )?;
                 assert_eq!(start_offset - current_offset, N_BYTES_ONE + N_BYTES_BLOCK);
 

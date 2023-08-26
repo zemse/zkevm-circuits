@@ -30,6 +30,8 @@ pub struct BlockValues {
     pub chain_id: u64,
     /// history_hashes
     pub history_hashes: Vec<H256>,
+    /// pox challenge bytecode hash
+    pub pox_challenge_codehash: H256,
 }
 
 /// Values of the tx table (as in the spec)
@@ -86,6 +88,8 @@ pub struct PublicData {
     pub block_constants: BlockConstants,
     /// Block Hash
     pub block_hash: Option<H256>,
+    /// POX Challenge Bytecode Hash
+    pub pox_challenge_codehash: H256,
 }
 
 impl Default for PublicData {
@@ -98,6 +102,7 @@ impl Default for PublicData {
             prev_state_root: H256::zero(),
             block_constants: BlockConstants::default(),
             block_hash: None,
+            pox_challenge_codehash: H256::zero(),
         }
     }
 }
@@ -122,6 +127,7 @@ impl PublicData {
             base_fee: self.block_constants.base_fee,
             chain_id: self.chain_id.as_u64(),
             history_hashes,
+            pox_challenge_codehash: self.pox_challenge_codehash,
         }
     }
 
@@ -185,7 +191,8 @@ impl PublicData {
                     .history_hashes
                     .iter()
                     .flat_map(|prev_hash| prev_hash.to_fixed_bytes()),
-            ); // history_hashes
+            ) // history_hashes
+            .chain(block_values.pox_challenge_codehash.to_fixed_bytes()); // pox challenge bytecode hash
 
         // Assign extra fields
         let extra_vals = self.get_extra_values();
@@ -281,5 +288,6 @@ pub fn public_data_convert<F: Field>(block: &Block<F>) -> PublicData {
             gas_limit: block.context.gas_limit.into(),
             base_fee: block.context.base_fee,
         },
+        pox_challenge_codehash: H256::from_uint(&block.pox_challenge_codehash),
     }
 }
