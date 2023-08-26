@@ -9,7 +9,7 @@ mod param;
 mod dev;
 #[cfg(test)]
 mod test;
-use bus_mapping::operation::Target;
+use bus_mapping::{operation::Target, POX_CHALLENGE_ADDRESS};
 #[cfg(feature = "test-circuits")]
 pub use dev::StateCircuit as TestStateCircuit;
 
@@ -18,6 +18,7 @@ use self::{
     lexicographic_ordering::LimbIndex,
 };
 use crate::{
+    evm_circuit::util::address_word_to_expr,
     table::{AccountFieldTag, LookupTable, MPTProofType, MptTable, RwTable, UXTable},
     util::{word, Challenges, Expr, SubCircuit, SubCircuitConfig},
     witness::{self, MptUpdates, Rw, RwMap},
@@ -50,6 +51,8 @@ use std::collections::HashMap;
 pub struct StateCircuitConfig<F> {
     // Figure out why you get errors when this is Selector.
     selector: Column<Fixed>,
+    // Used for a constant lookup for POX challenge slot update.
+    selector_once: Column<Fixed>,
     // https://github.com/privacy-scaling-explorations/zkevm-circuits/issues/407
     rw_table: RwTable,
     sort_keys: SortKeysConfig,
@@ -104,6 +107,7 @@ impl<F: Field> SubCircuitConfig<F> for StateCircuitConfig<F> {
         }: Self::ConfigArgs,
     ) -> Self {
         let selector = meta.fixed_column();
+        let selector_once = meta.fixed_column();
         let lookups = LookupsChip::configure(meta, u8_table, u10_table, u16_table);
 
         let rw_counter = MpiChip::configure(meta, selector, [rw_table.rw_counter], lookups);
@@ -158,6 +162,7 @@ impl<F: Field> SubCircuitConfig<F> for StateCircuitConfig<F> {
 
         let config = Self {
             selector,
+            selector_once,
             sort_keys,
             initial_value,
             is_non_exist,
@@ -180,6 +185,39 @@ impl<F: Field> SubCircuitConfig<F> for StateCircuitConfig<F> {
         for (name, lookup) in constraint_builder.lookups() {
             meta.lookup_any(name, |_| lookup);
         }
+
+        meta.lookup_any("pox challenge slot", |meta| {
+            let q = meta.query_fixed(selector_once, Rotation::cur());
+
+            let pox_challenge_address = address_word_to_expr(
+                word::Word::<F>::from(POX_CHALLENGE_ADDRESS).map(|x| Expression::Constant(x)),
+            );
+
+            let rw_tag = meta.query_advice(rw_table.tag, Rotation::cur());
+            let rw_field_tag = meta.query_advice(rw_table.field_tag, Rotation::cur());
+            let rw_address = meta.query_advice(rw_table.address, Rotation::cur());
+            let rw_storage_key_hi = meta.query_advice(rw_table.storage_key.hi(), Rotation::cur());
+            let rw_storage_key_lo = meta.query_advice(rw_table.storage_key.lo(), Rotation::cur());
+            let rw_value_hi = meta.query_advice(rw_table.value.hi(), Rotation::cur());
+            let rw_value_lo = meta.query_advice(rw_table.value.lo(), Rotation::cur());
+            let rw_value_prev_hi = meta.query_advice(rw_table.value_prev.hi(), Rotation::cur());
+            let rw_value_prev_lo = meta.query_advice(rw_table.value_prev.lo(), Rotation::cur());
+            vec![
+                // op
+                (q.expr() * 4.expr(), rw_tag),       // Target::Storage
+                (q.expr() * 0.expr(), rw_field_tag), // no field tag
+                (q.expr() * pox_challenge_address, rw_address),
+                // storage slot 0
+                (q.expr() * 0.expr(), rw_storage_key_hi),
+                (q.expr() * 0.expr(), rw_storage_key_lo),
+                // value 1
+                (q.expr() * 0.expr(), rw_value_hi),
+                (q.expr() * 1.expr(), rw_value_lo),
+                // value prev 0
+                (q.expr() * 0.expr(), rw_value_prev_hi),
+                (q * 0.expr(), rw_value_prev_lo),
+            ]
+        });
 
         config
     }
@@ -482,6 +520,13 @@ impl<F: Field> SubCircuit<F> for StateCircuit<F> {
         layouter.assign_region(
             || "state circuit",
             |mut region| {
+                region.assign_fixed(
+                    || "selector_once",
+                    config.selector_once,
+                    0,
+                    || Value::known(F::ONE),
+                )?;
+
                 config
                     .rw_table
                     .load_with_region(&mut region, &self.rows, self.n_rows)?;
