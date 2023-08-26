@@ -13,8 +13,6 @@ use eth_types::{address, bytecode, geth_types::GethData, Word};
 fn super_circuit_degree() {
     let mut cs = ConstraintSystem::<Fr>::default();
     let params = SuperCircuitParams {
-        max_txs: 1,
-        max_calldata: 32,
         mock_randomness: Fr::from(0x100),
     };
     SuperCircuit::configure_with_params(&mut cs, params);

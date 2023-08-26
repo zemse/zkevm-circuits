@@ -261,10 +261,7 @@ pub fn block_convert<F: Field>(
         pox_challenge_codehash: block.pox_challenge_codehash,
     };
     let public_data = public_data_convert(&block);
-    let rpi_bytes = public_data.get_pi_bytes(
-        block.circuits_params.max_txs,
-        block.circuits_params.max_calldata,
-    );
+    let rpi_bytes = public_data.get_pi_bytes();
     // PI Circuit
     block.keccak_inputs.extend_from_slice(&[rpi_bytes]);
     Ok(block)

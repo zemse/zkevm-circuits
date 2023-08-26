@@ -103,10 +103,6 @@ pub struct SuperCircuitConfig<F: Field> {
 
 /// Circuit configuration arguments
 pub struct SuperCircuitConfigArgs<F: Field> {
-    /// Max txs
-    pub max_txs: usize,
-    /// Max calldata
-    pub max_calldata: usize,
     /// Mock randomness
     pub mock_randomness: F,
 }
@@ -117,11 +113,7 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
     /// Configure SuperCircuitConfig
     fn new(
         meta: &mut ConstraintSystem<F>,
-        Self::ConfigArgs {
-            max_txs,
-            max_calldata,
-            mock_randomness,
-        }: Self::ConfigArgs,
+        Self::ConfigArgs { mock_randomness }: Self::ConfigArgs,
     ) -> Self {
         let tx_table = TxTable::construct(meta);
         let rw_table = RwTable::construct(meta);
@@ -157,11 +149,8 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
         let pi_circuit = PiCircuitConfig::new(
             meta,
             PiCircuitConfigArgs {
-                max_txs,
-                max_calldata,
                 rw_table,
                 block_table: block_table.clone(),
-                tx_table: tx_table.clone(),
                 keccak_table: keccak_table.clone(),
                 challenges: challenges.clone(),
             },
@@ -383,8 +372,6 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
 /// Super Circuit configuration parameters
 #[derive(Default)]
 pub struct SuperCircuitParams<F: Field> {
-    max_txs: usize,
-    max_calldata: usize,
     mock_randomness: F,
 }
 
@@ -399,8 +386,6 @@ impl<F: Field> Circuit<F> for SuperCircuit<F> {
 
     fn params(&self) -> Self::Params {
         SuperCircuitParams {
-            max_txs: self.circuits_params.max_txs,
-            max_calldata: self.circuits_params.max_calldata,
             mock_randomness: self.mock_randomness,
         }
     }
@@ -409,8 +394,6 @@ impl<F: Field> Circuit<F> for SuperCircuit<F> {
         Self::Config::new(
             meta,
             SuperCircuitConfigArgs {
-                max_txs: params.max_txs,
-                max_calldata: params.max_calldata,
                 mock_randomness: params.mock_randomness,
             },
         )
