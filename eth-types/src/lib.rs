@@ -49,7 +49,7 @@ use std::{collections::HashMap, fmt, str::FromStr};
 
 /// Trait used to reduce verbosity with the declaration of the [`FieldExt`]
 /// trait and its repr.
-pub trait Field: FieldExt + Halo2Field + PrimeField<Repr = [u8; 32]> {}
+pub trait Field: FieldExt + Halo2Field + PrimeField<Repr = [u8; 32]> + std::hash::Hash {}
 
 // Impl custom `Field` trait for BN256 Fr to be used and consistent with the
 // rest of the workspace.
