@@ -21,6 +21,7 @@ pub mod bytecode_circuit;
 pub mod copy_circuit;
 pub mod evm_circuit;
 pub mod exp_circuit;
+pub mod init_state_circuit;
 pub mod keccak_circuit;
 pub mod pi_circuit;
 pub mod root_circuit;

@@ -15,7 +15,7 @@ use core::iter::once;
 use eth_types::{Field, ToLittleEndian, ToScalar, Word, U256};
 use gadgets::{
     binary_number::{BinaryNumberChip, BinaryNumberConfig},
-    util::{split_u256, split_u256_limb64},
+    util::{split_u256, split_u256_limb64, Scalar},
 };
 use halo2_proofs::{
     arithmetic::FieldExt,
@@ -1489,6 +1489,168 @@ impl<F: Field> LookupTable<F> for ExpTable {
             meta.query_advice(self.exponent_lo_hi, Rotation::next()),
             meta.query_advice(self.exponentiation_lo_hi, Rotation::cur()),
             meta.query_advice(self.exponentiation_lo_hi, Rotation::next()),
+        ]
+    }
+}
+
+/// Tag to identify the field in a Init State Table row
+/// Keep the sequence consistent with OpcodeId for scalar
+#[derive(Clone, Copy, Debug)]
+pub enum InitStateFieldTag {
+    /// Nonce field
+    Nonce = 1,
+    /// Balance field
+    Balance,
+    /// CodeHash field
+    CodeHash,
+    /// Storage field
+    Storage,
+}
+impl_expr!(InitStateFieldTag);
+
+/// Table with Init State entries
+#[derive(Clone, Debug)]
+pub struct InitStateTable {
+    /// Account Address
+    pub address: Column<Advice>,
+    /// InitStateFieldTag
+    pub field_tag: Column<Advice>,
+    /// Account Storage Key if InitStateFieldTag is Storage
+    pub storage_key: Column<Advice>,
+    /// Value
+    pub value: Column<Advice>,
+}
+
+impl InitStateTable {
+    /// Construct a new InitStateTable
+    pub fn construct<F: Field>(meta: &mut ConstraintSystem<F>) -> Self {
+        Self {
+            address: meta.advice_column(),
+            field_tag: meta.advice_column(),
+            storage_key: meta.advice_column(),
+            value: meta.advice_column(),
+        }
+    }
+
+    /// Assign the `InitStateTable` from a `RwMap`.
+    pub fn load<F: Field>(
+        &self,
+        layouter: &mut impl Layouter<F>,
+        rws: &RwMap,
+        randomness: Value<F>,
+    ) -> Result<(), Error> {
+        layouter.assign_region(
+            || "is table",
+            |mut region| {
+                let is_table_columns = <InitStateTable as LookupTable<F>>::advice_columns(self);
+                let mut offset = 0;
+
+                for column in is_table_columns {
+                    region.assign_advice(
+                        || "is table all-zero row",
+                        column,
+                        offset,
+                        || Value::known(F::zero()),
+                    )?;
+                }
+                offset += 1;
+
+                let account_rws = rws.0.get(&RwTableTag::Account).unwrap();
+                for rw in account_rws.iter() {
+                    let address: F = rw.address().unwrap().to_scalar().unwrap();
+                    let field_tag: F = match rw.field_tag().unwrap() {
+                        1 => InitStateFieldTag::Nonce.scalar(),
+                        2 => InitStateFieldTag::Balance.scalar(),
+                        3 => InitStateFieldTag::CodeHash.scalar(),
+                        _ => unreachable!(),
+                    };
+
+                    let value = randomness.map(|r| rw.value_assignment(r));
+
+                    region.assign_advice(
+                        || format!("is table row {offset} address"),
+                        self.address,
+                        offset,
+                        || Value::known(address),
+                    )?;
+                    region.assign_advice(
+                        || format!("is table row {offset} field_tag"),
+                        self.field_tag,
+                        offset,
+                        || Value::known(field_tag),
+                    )?;
+                    region.assign_advice(
+                        || format!("is table row {offset} storage_key rlc"),
+                        self.storage_key,
+                        offset,
+                        || Value::known(F::zero()),
+                    )?;
+                    region.assign_advice(
+                        || format!("is table row {offset} value rlc"),
+                        self.value,
+                        offset,
+                        || value,
+                    )?;
+                    offset += 1;
+                }
+
+                let storage_rws = rws.0.get(&RwTableTag::AccountStorage).unwrap();
+                for rw in storage_rws.iter() {
+                    let address: F = rw.address().unwrap().to_scalar().unwrap();
+                    let field_tag: F = F::from(InitStateFieldTag::Storage as u64);
+                    let key =
+                        randomness.map(|r| rlc::value(&rw.storage_key().unwrap().to_le_bytes(), r));
+                    let value = randomness.map(|r| rw.value_assignment(r));
+
+                    region.assign_advice(
+                        || format!("is table row {offset} address"),
+                        self.address,
+                        offset,
+                        || Value::known(address),
+                    )?;
+                    region.assign_advice(
+                        || format!("is table row {offset} field_tag"),
+                        self.field_tag,
+                        offset,
+                        || Value::known(field_tag),
+                    )?;
+                    region.assign_advice(
+                        || format!("is table row {offset} storage_key rlc"),
+                        self.storage_key,
+                        offset,
+                        || key,
+                    )?;
+                    region.assign_advice(
+                        || format!("is table row {offset} value rlc"),
+                        self.value,
+                        offset,
+                        || value,
+                    )?;
+                    offset += 1;
+                }
+
+                Ok(())
+            },
+        )
+    }
+}
+
+impl<F: Field> LookupTable<F> for InitStateTable {
+    fn columns(&self) -> Vec<Column<Any>> {
+        vec![
+            self.address.into(),
+            self.field_tag.into(),
+            self.storage_key.into(),
+            self.value.into(),
+        ]
+    }
+
+    fn annotations(&self) -> Vec<String> {
+        vec![
+            String::from("address"),
+            String::from("field_tag"),
+            String::from("storage_key"),
+            String::from("value"),
         ]
     }
 }

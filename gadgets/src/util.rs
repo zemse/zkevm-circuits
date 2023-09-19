@@ -135,6 +135,34 @@ pub mod select {
     }
 }
 
+/// Trait that implements functionality to get a scalar from
+/// commonly used types.
+pub trait Scalar<F: FieldExt> {
+    /// Returns a scalar for the type.
+    fn scalar(&self) -> F;
+}
+
+/// Implementation trait `Scalar` for type able to be casted to u64
+#[macro_export]
+macro_rules! impl_scalar {
+    ($type:ty) => {
+        impl<F: eth_types::Field> $crate::util::Scalar<F> for $type {
+            #[inline]
+            fn scalar(&self) -> F {
+                F::from(*self as u64)
+            }
+        }
+    };
+    ($type:ty, $method:path) => {
+        impl<F: eth_types::Field> $crate::util::Scalar<F> for $type {
+            #[inline]
+            fn scalar(&self) -> F {
+                F::from($method(self) as u64)
+            }
+        }
+    };
+}
+
 /// Trait that implements functionality to get a constant expression from
 /// commonly used types.
 pub trait Expr<F: FieldExt> {
@@ -146,6 +174,7 @@ pub trait Expr<F: FieldExt> {
 #[macro_export]
 macro_rules! impl_expr {
     ($type:ty) => {
+        $crate::impl_scalar!($type);
         impl<F: halo2_proofs::arithmetic::FieldExt> $crate::util::Expr<F> for $type {
             #[inline]
             fn expr(&self) -> Expression<F> {
@@ -154,6 +183,7 @@ macro_rules! impl_expr {
         }
     };
     ($type:ty, $method:path) => {
+        $crate::impl_scalar!($type, $method);
         impl<F: halo2_proofs::arithmetic::FieldExt> $crate::util::Expr<F> for $type {
             #[inline]
             fn expr(&self) -> Expression<F> {
