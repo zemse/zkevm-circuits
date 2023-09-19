@@ -60,11 +60,13 @@ use crate::{
     copy_circuit::{CopyCircuit, CopyCircuitConfig, CopyCircuitConfigArgs},
     evm_circuit::{EvmCircuit, EvmCircuitConfig, EvmCircuitConfigArgs},
     exp_circuit::{ExpCircuit, ExpCircuitConfig},
+    init_state_circuit::{InitStateCircuitConfig, InitStateCircuitConfigArgs},
     keccak_circuit::{KeccakCircuit, KeccakCircuitConfig, KeccakCircuitConfigArgs},
     pi_circuit::{PiCircuit, PiCircuitConfig, PiCircuitConfigArgs},
     state_circuit::{StateCircuit, StateCircuitConfig, StateCircuitConfigArgs},
     table::{
-        BlockTable, BytecodeTable, CopyTable, ExpTable, KeccakTable, MptTable, RwTable, TxTable,
+        BlockTable, BytecodeTable, CopyTable, ExpTable, InitStateTable, KeccakTable, MptTable,
+        RwTable, TxTable,
     },
     tx_circuit::{TxCircuit, TxCircuitConfig, TxCircuitConfigArgs},
     util::{log2_ceil, Challenges, SubCircuit, SubCircuitConfig},
@@ -95,6 +97,7 @@ pub struct SuperCircuitConfig<F: Field> {
     keccak_circuit: KeccakCircuitConfig<F>,
     pi_circuit: PiCircuitConfig<F>,
     exp_circuit: ExpCircuitConfig<F>,
+    init_state_circuit: InitStateCircuitConfig<F>,
 }
 
 /// Circuit configuration arguments
@@ -128,6 +131,7 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
         let copy_table = CopyTable::construct(meta, q_copy_table);
         let exp_table = ExpTable::construct(meta);
         let keccak_table = KeccakTable::construct(meta);
+        let init_state_table = InitStateTable::construct(meta);
 
         // Use a mock randomness instead of the randomness derived from the challange
         // (either from mock or real prover) to help debugging assignments.
@@ -207,6 +211,14 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
                 exp_table,
             },
         );
+        let init_state_circuit = InitStateCircuitConfig::new(
+            meta,
+            InitStateCircuitConfigArgs {
+                block_table: block_table.clone(),
+                init_state_table,
+                rw_table,
+            },
+        );
 
         Self {
             block_table,
@@ -219,6 +231,7 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
             keccak_circuit,
             pi_circuit,
             exp_circuit,
+            init_state_circuit,
         }
     }
 }

@@ -9,19 +9,20 @@ use eth_types::Field;
 // use halo2_proofs::plonk::circuit::Circuit;
 use std::marker::PhantomData;
 
-use axiom_eth::storage::EthBlockStorageCircuit;
+use axiom_eth::{util::EthConfigParams, MPTConfig};
 
-/// Config for IsCircuit
+/// Config for InitStateCircuit
 #[derive(Clone, Debug)]
-pub struct IsCircuitConfig<F: Field> {
+pub struct InitStateCircuitConfig<F: Field> {
     block_table: BlockTable,
     init_state_table: InitStateTable,
     rw_table: RwTable,
+    axiom: MPTConfig<F>,
     _marker: PhantomData<F>,
 }
 
 /// Circuit configuration arguments
-pub struct IsCircuitConfigArgs {
+pub struct InitStateCircuitConfigArgs {
     /// Block Table
     pub block_table: BlockTable,
     /// Init State Table
@@ -30,8 +31,8 @@ pub struct IsCircuitConfigArgs {
     pub rw_table: RwTable,
 }
 
-impl<F: Field> SubCircuitConfig<F> for IsCircuitConfig<F> {
-    type ConfigArgs = IsCircuitConfigArgs;
+impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
+    type ConfigArgs = InitStateCircuitConfigArgs;
 
     fn new(
         meta: &mut halo2_proofs::plonk::ConstraintSystem<F>,
@@ -58,6 +59,19 @@ impl<F: Field> SubCircuitConfig<F> for IsCircuitConfig<F> {
             block_table,
             init_state_table,
             rw_table,
+            axiom: MPTConfig::configure(
+                meta,
+                EthConfigParams {
+                    degree: 19,
+                    num_rlc_columns: 2,
+                    num_range_advice: vec![17, 10, 0],
+                    num_lookup_advice: vec![1, 1, 0],
+                    num_fixed: 1,
+                    unusable_rows: 77,
+                    keccak_rows_per_round: 50,
+                    lookup_bits: Some(3),
+                },
+            ),
             _marker: PhantomData,
         }
     }
@@ -65,13 +79,13 @@ impl<F: Field> SubCircuitConfig<F> for IsCircuitConfig<F> {
 
 /// Init State Circuit
 #[derive(Clone, Default, Debug)]
-pub struct IsCircuit<F: Field> {
+pub struct InitStateCircuit<F: Field> {
     rws: RwMap,
     _marker: PhantomData<F>,
 }
 
-impl<F: Field> SubCircuit<F> for IsCircuit<F> {
-    type Config = IsCircuitConfig<F>;
+impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
+    type Config = InitStateCircuitConfig<F>;
 
     fn unusable_rows() -> usize {
         0
