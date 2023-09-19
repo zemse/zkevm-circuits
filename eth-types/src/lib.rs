@@ -24,7 +24,7 @@ pub mod sign_types;
 
 pub use bytecode::Bytecode;
 pub use error::Error;
-use halo2_proofs::{
+pub use halo2_proofs::{
     arithmetic::{Field as Halo2Field, FieldExt},
     halo2curves::{
         bn256::{Fq, Fr},
