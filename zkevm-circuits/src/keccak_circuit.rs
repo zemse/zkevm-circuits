@@ -87,7 +87,7 @@ impl<F: Field> SubCircuitConfig<F> for KeccakCircuitConfig<F> {
     ) -> Self {
         assert!(
             get_num_rows_per_round() > NUM_BYTES_PER_WORD,
-            "KeccakCircuit requires KECCAK_ROWS>=9"
+            "KeccakCircuit requires KECCAK_ROWS_ZKEVM>=9"
         );
         let q_enable = meta.fixed_column();
         let q_first = meta.fixed_column();

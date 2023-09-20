@@ -19,13 +19,13 @@ use super::util::{target_part_sizes, target_part_sizes_rot, WordParts};
 #[test]
 fn serial_keccak_circuit_unusable_rows() {
     for keccak_rows in NUM_BYTES_PER_WORD + 1..=32 {
-        std::env::set_var("KECCAK_ROWS", format!("{keccak_rows}"));
+        std::env::set_var("KECCAK_ROWS_ZKEVM", format!("{keccak_rows}"));
         assert_eq!(
             KeccakCircuit::<Fr>::unusable_rows(),
             unusable_rows::<Fr, KeccakCircuit::<Fr>>(),
         )
     }
-    std::env::set_var("KECCAK_ROWS", format!("{DEFAULT_KECCAK_ROWS}"));
+    std::env::set_var("KECCAK_ROWS_ZKEVM", format!("{DEFAULT_KECCAK_ROWS}"));
 }
 
 fn verify<F: Field>(k: u32, inputs: Vec<Vec<u8>>, success: bool) {

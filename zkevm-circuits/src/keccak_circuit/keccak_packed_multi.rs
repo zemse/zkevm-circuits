@@ -10,10 +10,10 @@ use log::debug;
 use std::{env::var, vec};
 
 pub(crate) fn get_num_rows_per_round() -> usize {
-    var("KECCAK_ROWS")
+    var("KECCAK_ROWS_ZKEVM")
         .unwrap_or_else(|_| format!("{DEFAULT_KECCAK_ROWS}"))
         .parse()
-        .expect("Cannot parse KECCAK_ROWS env var as usize")
+        .expect("Cannot parse KECCAK_ROWS_ZKEVM env var as usize")
 }
 
 pub(crate) fn keccak_unusable_rows() -> usize {
