@@ -60,7 +60,7 @@ use crate::{
     copy_circuit::{CopyCircuit, CopyCircuitConfig, CopyCircuitConfigArgs},
     evm_circuit::{EvmCircuit, EvmCircuitConfig, EvmCircuitConfigArgs},
     exp_circuit::{ExpCircuit, ExpCircuitConfig},
-    init_state_circuit::{InitStateCircuitConfig, InitStateCircuitConfigArgs},
+    init_state_circuit::{InitStateCircuit, InitStateCircuitConfig, InitStateCircuitConfigArgs},
     keccak_circuit::{KeccakCircuit, KeccakCircuitConfig, KeccakCircuitConfigArgs},
     pi_circuit::{PiCircuit, PiCircuitConfig, PiCircuitConfigArgs},
     state_circuit::{StateCircuit, StateCircuitConfig, StateCircuitConfigArgs},
@@ -260,6 +260,8 @@ pub struct SuperCircuit<
     pub exp_circuit: ExpCircuit<F>,
     /// Keccak Circuit
     pub keccak_circuit: KeccakCircuit<F>,
+    /// Init State Circuit
+    pub init_state_circuit: InitStateCircuit<F>,
 }
 
 impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize, const MOCK_RANDOMNESS: u64>
@@ -293,6 +295,7 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize, const MOCK_RANDO
             CopyCircuit::<F>::unusable_rows(),
             ExpCircuit::<F>::unusable_rows(),
             KeccakCircuit::<F>::unusable_rows(),
+            InitStateCircuit::<F>::unusable_rows(),
         ])
         .unwrap()
     }
@@ -306,6 +309,7 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize, const MOCK_RANDO
         let copy_circuit = CopyCircuit::new_from_block_no_external(block);
         let exp_circuit = ExpCircuit::new_from_block(block);
         let keccak_circuit = KeccakCircuit::new_from_block(block);
+        let init_state_circuit = InitStateCircuit::new_from_block(block);
 
         SuperCircuit::<_, MAX_TXS, MAX_CALLDATA, MOCK_RANDOMNESS> {
             evm_circuit,
@@ -316,6 +320,7 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize, const MOCK_RANDO
             copy_circuit,
             exp_circuit,
             keccak_circuit,
+            init_state_circuit,
         }
     }
 
@@ -330,6 +335,7 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize, const MOCK_RANDO
         instance.extend_from_slice(&self.state_circuit.instance());
         instance.extend_from_slice(&self.exp_circuit.instance());
         instance.extend_from_slice(&self.evm_circuit.instance());
+        instance.extend_from_slice(&self.init_state_circuit.instance());
 
         instance
     }
@@ -344,8 +350,10 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize, const MOCK_RANDO
         let tx = TxCircuit::min_num_rows_block(block);
         let exp = ExpCircuit::min_num_rows_block(block);
         let pi = PiCircuit::min_num_rows_block(block);
+        let init_state = InitStateCircuit::min_num_rows_block(block);
 
-        let rows: Vec<(usize, usize)> = vec![evm, state, bytecode, copy, keccak, tx, exp, pi];
+        let rows: Vec<(usize, usize)> =
+            vec![evm, state, bytecode, copy, keccak, tx, exp, pi, init_state];
         let (rows_without_padding, rows_with_padding): (Vec<usize>, Vec<usize>) =
             rows.into_iter().unzip();
         (
@@ -377,6 +385,8 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize, const MOCK_RANDO
             .synthesize_sub(&config.evm_circuit, challenges, layouter)?;
         self.pi_circuit
             .synthesize_sub(&config.pi_circuit, challenges, layouter)?;
+        self.init_state_circuit
+            .synthesize_sub(&config.init_state_circuit, challenges, layouter)?;
         Ok(())
     }
 }

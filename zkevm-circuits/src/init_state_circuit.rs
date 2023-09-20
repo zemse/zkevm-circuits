@@ -23,7 +23,7 @@ pub struct InitStateCircuitConfig<F: Field> {
     block_table: BlockTable,
     init_state_table: InitStateTable,
     rw_table: RwTable,
-    axiom: EthConfig<F>,
+    axiom_eth_config: EthConfig<F>,
     _marker: PhantomData<F>,
 }
 
@@ -65,7 +65,7 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             block_table,
             init_state_table,
             rw_table,
-            axiom: EthConfig::configure(
+            axiom_eth_config: EthConfig::configure(
                 meta,
                 EthConfigParams {
                     degree: 19,
@@ -120,15 +120,18 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
             .load(layouter, &self.rws, challenges.evm_word())?;
 
         // Assign witness to link the storage reads to the state root.
-        let axiom_circuit_template = EthBlockStorageCircuitGeneric::new(
+        let axiom_eth_block_storage_circuit = EthBlockStorageCircuitGeneric::new(
             self.axiom_inputs.clone(),
             axiom_eth::Network::Goerli,
         );
 
         let builder = RlcThreadBuilder::new(false);
-        let axiom_circuit = axiom_circuit_template.create(builder, None);
-        axiom_circuit
-            .synthesize(config.axiom.clone(), layouter.namespace(|| "axiom"))
+        let axiom_eth_circuit_builder = axiom_eth_block_storage_circuit.create(builder, None);
+        axiom_eth_circuit_builder
+            .synthesize(
+                config.axiom_eth_config.clone(),
+                layouter.namespace(|| "axiom"),
+            )
             .unwrap();
 
         Ok(())
