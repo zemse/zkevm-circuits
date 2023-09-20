@@ -7,6 +7,7 @@ use crate::{
     operation::{OperationContainer, RWCounter},
     Error,
 };
+use axiom_eth::storage::EthBlockStorageInput;
 use eth_types::{evm_unimplemented, Address, Hash, Word};
 use std::collections::HashMap;
 
@@ -91,6 +92,8 @@ pub struct Block {
     pub circuits_params: CircuitsParams,
     /// Original block from geth
     pub eth_block: eth_types::Block<eth_types::Transaction>,
+    /// Inputs to axiom circuit
+    pub axiom_inputs: EthBlockStorageInput,
 }
 
 impl Block {
@@ -101,6 +104,7 @@ impl Block {
         prev_state_root: Word,
         eth_block: &eth_types::Block<eth_types::Transaction>,
         circuits_params: CircuitsParams,
+        axiom_inputs: EthBlockStorageInput,
     ) -> Result<Self, Error> {
         if eth_block.base_fee_per_gas.is_none() {
             // FIXME: resolve this once we have proper EIP-1559 support
@@ -143,6 +147,7 @@ impl Block {
             sha3_inputs: Vec::new(),
             circuits_params,
             eth_block: eth_block.clone(),
+            axiom_inputs,
         })
     }
 

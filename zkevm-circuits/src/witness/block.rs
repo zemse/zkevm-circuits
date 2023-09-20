@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::evm_circuit::{detect_fixed_table_tags, EvmCircuit};
 
 use crate::{evm_circuit::util::rlc, table::BlockContextFieldTag, util::SubCircuit};
+use axiom_eth::storage::EthBlockStorageInput;
 use bus_mapping::{
     circuit_input_builder::{self, CircuitsParams, CopyEvent, ExpEvent},
     Error,
@@ -49,6 +50,8 @@ pub struct Block<F> {
     pub keccak_inputs: Vec<Vec<u8>>,
     /// Original Block from geth
     pub eth_block: eth_types::Block<eth_types::Transaction>,
+    /// Inputs to axiom circuit
+    pub axiom_inputs: EthBlockStorageInput,
 }
 
 impl<F: Field> Block<F> {
@@ -266,5 +269,6 @@ pub fn block_convert<F: Field>(
         prev_state_root: block.prev_state_root,
         keccak_inputs: circuit_input_builder::keccak_inputs(block, code_db)?,
         eth_block: block.eth_block.clone(),
+        axiom_inputs: block.axiom_inputs.clone(),
     })
 }

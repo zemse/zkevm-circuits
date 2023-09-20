@@ -6,10 +6,16 @@ use crate::{
     witness::RwMap,
 };
 use eth_types::Field;
-// use halo2_proofs::plonk::circuit::Circuit;
+use halo2_proofs::plonk::Circuit;
+
 use std::marker::PhantomData;
 
-use axiom_eth::{util::EthConfigParams, MPTConfig};
+use axiom_eth::{
+    rlp::builder::{FnSynthesize, RlcThreadBuilder},
+    storage::{EthBlockStorageCircuitGeneric, EthBlockStorageInput},
+    util::EthConfigParams,
+    EthCircuitBuilder, EthConfig, EthPreCircuit,
+};
 
 /// Config for InitStateCircuit
 #[derive(Clone, Debug)]
@@ -17,7 +23,7 @@ pub struct InitStateCircuitConfig<F: Field> {
     block_table: BlockTable,
     init_state_table: InitStateTable,
     rw_table: RwTable,
-    axiom: MPTConfig<F>,
+    axiom: EthConfig<F>,
     _marker: PhantomData<F>,
 }
 
@@ -59,7 +65,7 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             block_table,
             init_state_table,
             rw_table,
-            axiom: MPTConfig::configure(
+            axiom: EthConfig::configure(
                 meta,
                 EthConfigParams {
                     degree: 19,
@@ -81,6 +87,7 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
 #[derive(Clone, Default, Debug)]
 pub struct InitStateCircuit<F: Field> {
     rws: RwMap,
+    axiom_inputs: EthBlockStorageInput,
     _marker: PhantomData<F>,
 }
 
@@ -94,6 +101,7 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
     fn new_from_block(block: &crate::witness::Block<F>) -> Self {
         Self {
             rws: block.rws.clone(),
+            axiom_inputs: block.axiom_inputs.clone(),
             _marker: PhantomData,
         }
     }
@@ -112,6 +120,16 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
             .load(layouter, &self.rws, challenges.evm_word())?;
 
         // Assign witness to link the storage reads to the state root.
+        let axiom_circuit_template = EthBlockStorageCircuitGeneric::new(
+            self.axiom_inputs.clone(),
+            axiom_eth::Network::Goerli,
+        );
+
+        let builder = RlcThreadBuilder::new(false);
+        let axiom_circuit = axiom_circuit_template.create(builder, None);
+        axiom_circuit
+            .synthesize(config.axiom.clone(), layouter.namespace(|| "axiom"))
+            .unwrap();
 
         Ok(())
     }

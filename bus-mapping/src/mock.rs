@@ -4,6 +4,7 @@ use crate::{
     circuit_input_builder::{get_state_accesses, Block, CircuitInputBuilder, CircuitsParams},
     state_db::{self, CodeDB, StateDB},
 };
+use axiom_eth::storage::EthBlockStorageInput;
 use eth_types::{geth_types::GethData, Word};
 
 /// BlockData is a type that contains all the information from a block required
@@ -25,6 +26,8 @@ pub struct BlockData {
     pub geth_traces: Vec<eth_types::GethExecTrace>,
     /// Circuits setup parameters
     pub circuits_params: CircuitsParams,
+    /// Inputs to axiom circuit
+    pub axiom_inputs: EthBlockStorageInput,
 }
 
 impl BlockData {
@@ -40,6 +43,7 @@ impl BlockData {
                 Word::default(),
                 &self.eth_block,
                 self.circuits_params,
+                self.axiom_inputs.clone(),
             )
             .unwrap(),
         )
@@ -80,6 +84,7 @@ impl BlockData {
             eth_block: geth_data.eth_block,
             geth_traces: geth_data.geth_traces,
             circuits_params,
+            axiom_inputs: EthBlockStorageInput::default(),
         }
     }
 

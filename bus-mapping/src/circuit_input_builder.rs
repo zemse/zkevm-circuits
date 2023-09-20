@@ -19,6 +19,7 @@ use crate::{
     state_db::{self, CodeDB, StateDB},
 };
 pub use access::{Access, AccessSet, AccessValue, CodeSource};
+use axiom_eth::storage::EthBlockStorageInput;
 pub use block::{Block, BlockContext};
 pub use call::{Call, CallContext, CallKind};
 use core::fmt::Debug;
@@ -574,6 +575,7 @@ impl<P: JsonRpcClient> BuilderClient<P> {
             prev_state_root,
             eth_block,
             self.circuits_params,
+            EthBlockStorageInput::default(),
         )?;
         let mut builder = CircuitInputBuilder::new(sdb, code_db, block);
         builder.handle_block(eth_block, geth_traces)?;

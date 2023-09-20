@@ -483,6 +483,7 @@ checksum = "0d261e256854913907f67ed06efbc3338dfe6179796deefc1ff763fc1aee5535"
 name = "bus-mapping"
 version = "0.1.0"
 dependencies = [
+ "axiom-eth",
  "eth-types",
  "ethers-core 0.17.0",
  "ethers-providers 0.17.0",
