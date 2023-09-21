@@ -6,7 +6,7 @@ authors = ["CPerezz <c.perezbaro@gmail.com>"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-axiom-eth = { path = "../../axiom-eth/axiom-eth", default-features = false, features = ["halo2-pse", "aggregation", "evm"] }
+axiom-eth = { git = "https://github.com/zemse/axiom-eth", rev = "3298386e", default-features = false, features = ["halo2-pse", "aggregation", "evm"] }
 eth-types = { path = "../eth-types" }
 gadgets = { path = "../gadgets" }
 keccak256 = { path = "../keccak256" }
