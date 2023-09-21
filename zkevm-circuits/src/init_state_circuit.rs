@@ -11,7 +11,7 @@ use halo2_proofs::plonk::Circuit;
 use std::marker::PhantomData;
 
 use axiom_eth::{
-    rlp::builder::{FnSynthesize, RlcThreadBuilder},
+    rlp::builder::{FnSynthesize, RlcThreadBreakPoints, RlcThreadBuilder},
     storage::{EthBlockStorageCircuitGeneric, EthBlockStorageInput},
     util::EthConfigParams,
     EthCircuitBuilder, EthConfig, EthPreCircuit,
@@ -74,8 +74,8 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
                     num_lookup_advice: vec![1, 1, 0],
                     num_fixed: 1,
                     unusable_rows: 77,
-                    keccak_rows_per_round: 50,
-                    lookup_bits: Some(3),
+                    keccak_rows_per_round: 25,
+                    lookup_bits: Some(8),
                 },
             ),
             _marker: PhantomData,
@@ -126,7 +126,22 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
         );
 
         let builder = RlcThreadBuilder::new(false);
-        let axiom_eth_circuit_builder = axiom_eth_block_storage_circuit.create(builder, None);
+        let axiom_eth_circuit_builder = axiom_eth_block_storage_circuit.create(
+            builder,
+            Some(RlcThreadBreakPoints {
+                gate: vec![
+                    vec![
+                        524226, 524226, 524228, 524228, 524228, 524228, 524227, 524228, 524227,
+                        524228, 524227, 524228, 524226, 524226, 524226, 524226,
+                    ],
+                    vec![
+                        524228, 524228, 524226, 524228, 524228, 524228, 524228, 524228, 524228,
+                    ],
+                    vec![],
+                ],
+                rlc: vec![524227],
+            }),
+        );
         axiom_eth_circuit_builder
             .synthesize(
                 config.axiom_eth_config.clone(),
@@ -134,11 +149,20 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
             )
             .unwrap();
 
+        println!(
+            "axiom_eth_circuit_builder.assigned_instances {:#?}",
+            axiom_eth_circuit_builder.assigned_instances
+        );
+
         Ok(())
     }
 
     fn min_num_rows_block(block: &crate::witness::Block<F>) -> (usize, usize) {
         // TODO
         (0, 10)
+    }
+
+    fn instance(&self) -> Vec<Vec<F>> {
+        vec![vec![]] // TODO remove this instance
     }
 }
