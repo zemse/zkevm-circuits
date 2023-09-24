@@ -8,7 +8,7 @@ use crate::{
 use eth_types::Field;
 use halo2_proofs::plonk::Circuit;
 
-use std::marker::PhantomData;
+use std::{env::set_var, marker::PhantomData};
 
 use axiom_eth::{
     rlp::builder::{FnSynthesize, RlcThreadBreakPoints, RlcThreadBuilder},
@@ -61,23 +61,33 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
 
         // EthBlockStorageCircuit::
 
+        let eth_config_params = EthConfigParams {
+            degree: 19,
+            num_rlc_columns: 2,
+            num_range_advice: vec![17, 10, 0],
+            num_lookup_advice: vec![1, 1, 0],
+            num_fixed: 1,
+            unusable_rows: 77,
+            keccak_rows_per_round: 25,
+            lookup_bits: Some(8),
+        };
+
+        set_var(
+            "ETH_CONFIG_PARAMS",
+            serde_json::to_string(&eth_config_params).unwrap(),
+        );
+        set_var(
+            "KECCAK_ROWS",
+            eth_config_params.keccak_rows_per_round.to_string(),
+        );
+        let bits = eth_config_params.lookup_bits.unwrap();
+        set_var("LOOKUP_BITS", bits.to_string());
+
         Self {
             block_table,
             init_state_table,
             rw_table,
-            axiom_eth_config: EthConfig::configure(
-                meta,
-                EthConfigParams {
-                    degree: 19,
-                    num_rlc_columns: 2,
-                    num_range_advice: vec![17, 10, 0],
-                    num_lookup_advice: vec![1, 1, 0],
-                    num_fixed: 1,
-                    unusable_rows: 77,
-                    keccak_rows_per_round: 25,
-                    lookup_bits: Some(8),
-                },
-            ),
+            axiom_eth_config: EthConfig::configure(meta, eth_config_params),
             _marker: PhantomData,
         }
     }
