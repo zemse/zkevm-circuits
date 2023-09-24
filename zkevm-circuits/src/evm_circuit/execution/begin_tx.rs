@@ -27,7 +27,7 @@ use crate::{
         Expr,
     },
 };
-use bus_mapping::{state_db::CodeDB, POX_CHALLENGE_ADDRESS};
+use bus_mapping::{state_db::CodeDB, POX_CHALLENGE_ADDRESS, POX_EXPLOIT_ADDRESS};
 use eth_types::{evm_types::GasCost, keccak256, Field, ToWord, U256};
 use halo2_proofs::{
     circuit::Value,
@@ -67,6 +67,8 @@ pub(crate) struct BeginTxGadget<F> {
     is_coinbase_warm: Cell<F>,
     // POX Challenge
     pox_challenge_codehash: WordCell<F>,
+    // POX Exploit
+    pox_exploit_codehash: WordCell<F>,
 }
 
 impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
@@ -78,7 +80,6 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
         // Use rw_counter of the step which triggers next call as its call_id.
         let call_id = cb.curr.state.rw_counter.clone();
 
-        // TODO maybe load constant from fixed column ??
         let pox_challenge_address =
             Word::<F>::from(POX_CHALLENGE_ADDRESS).map(|x| Expression::Constant(x));
         let pox_challenge_codehash = cb.query_word_unchecked();
@@ -87,6 +88,18 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             pox_challenge_address,
             AccountFieldTag::CodeHash,
             pox_challenge_codehash.to_word(),
+            Word::from_lo_unchecked(0.expr()),
+            None,
+        );
+
+        let pox_exploit_address =
+            Word::<F>::from(POX_EXPLOIT_ADDRESS).map(|x| Expression::Constant(x));
+        let pox_exploit_codehash = cb.query_word_unchecked();
+
+        cb.account_write(
+            pox_exploit_address,
+            AccountFieldTag::CodeHash,
+            pox_exploit_codehash.to_word(),
             Word::from_lo_unchecked(0.expr()),
             None,
         );
@@ -353,7 +366,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                 //   - Write CallContext IsRoot
                 //   - Write CallContext IsCreate
                 //   - Write CallContext CodeHash
-                rw_counter: Delta(1.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
+                rw_counter: Delta(2.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
                 call_id: To(call_id.expr()),
                 is_root: To(true.expr()),
                 is_create: To(tx_is_create.expr()),
@@ -397,7 +410,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                     //   - Write TxAccessListAccount (Coinbase) for EIP-3651
                     //   - Read Account CodeHash
                     //   - a TransferWithGasFeeGadget
-                    rw_counter: Delta(1.expr() + 9.expr() + transfer_with_gas_fee.rw_delta()),
+                    rw_counter: Delta(2.expr() + 9.expr() + transfer_with_gas_fee.rw_delta()),
                     call_id: To(call_id.expr()),
                     ..StepStateTransition::any()
                 });
@@ -470,7 +483,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                     //   - Write CallContext IsRoot
                     //   - Write CallContext IsCreate
                     //   - Write CallContext CodeHash
-                    rw_counter: Delta(1.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
+                    rw_counter: Delta(2.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
                     call_id: To(call_id.expr()),
                     is_root: To(true.expr()),
                     is_create: To(tx_is_create.expr()),
@@ -509,6 +522,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             coinbase,
             is_coinbase_warm,
             pox_challenge_codehash,
+            pox_exploit_codehash,
         }
     }
 
@@ -530,7 +544,11 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
         self.pox_challenge_codehash
             .assign_u256(region, offset, pox_challenge_codehash)?;
 
-        rws.offset_add(7 + 1);
+        let pox_exploit_codehash = rws.next().value_assignment();
+        self.pox_exploit_codehash
+            .assign_u256(region, offset, pox_exploit_codehash)?;
+
+        rws.offset_add(7 + 2);
 
         let is_coinbase_warm = rws.next().tx_access_list_value_pair().1;
         let mut callee_code_hash = zero;

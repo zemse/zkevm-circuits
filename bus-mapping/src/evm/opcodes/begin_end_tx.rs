@@ -3,7 +3,7 @@ use crate::{
     circuit_input_builder::{CircuitInputStateRef, ExecState, ExecStep},
     operation::{AccountField, AccountOp, CallContextField, TxReceiptField, TxRefundOp, RW},
     state_db::CodeDB,
-    Error, POX_CHALLENGE_ADDRESS,
+    Error, POX_CHALLENGE_ADDRESS, POX_EXPLOIT_ADDRESS,
 };
 use eth_types::{
     evm_types::{GasCost, MAX_REFUND_QUOTIENT_OF_GAS_USED},
@@ -36,6 +36,7 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
     if !found {
         return Err(Error::AccountNotFound(POX_CHALLENGE_ADDRESS));
     }
+
     // update pox challenge account with bytecode
     state.account_write(
         &mut exec_step,
@@ -44,6 +45,16 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
         state.block.pox_challenge_codehash.to_word(),
         Word::zero(),
     )?;
+
+    // update pox exploit account with bytecode
+    state.account_write(
+        &mut exec_step,
+        POX_EXPLOIT_ADDRESS,
+        AccountField::CodeHash,
+        state.block.pox_exploit_codehash.to_word(),
+        Word::zero(),
+    )?;
+
     // the above updates sdb but old code_hash still stays hanging in the state.tx
     state.tx_patch();
 

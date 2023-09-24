@@ -233,6 +233,16 @@ pub const POX_CHALLENGE_ADDRESS: eth_types::H160 = eth_types::H160([
     0x00, 0x00, 0x00, 0x00, //
 ]);
 
+/// Address for exploit contract for Proof of Exploit
+/// 0xBADA550000000000000000000000000000000000
+pub const POX_EXPLOIT_ADDRESS: eth_types::H160 = eth_types::H160([
+    0xBA, 0xDA, 0x55, 0x00, //
+    0x00, 0x00, 0x00, 0x00, //
+    0x00, 0x00, 0x00, 0x00, //
+    0x00, 0x00, 0x00, 0x00, //
+    0x00, 0x00, 0x00, 0x00, //
+]);
+
 extern crate alloc;
 extern crate core;
 

@@ -43,6 +43,7 @@ impl<C: CircuitsParams> BlockData<C> {
                 Word::default(),
                 &self.eth_block,
                 Bytes::default(),
+                Bytes::default(),
             )
             .unwrap(),
             self.circuits_params,
