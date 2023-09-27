@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 use super::*;
 use crate::util::{log2_ceil, unusable_rows};
-use eth_types::address;
+use eth_types::{address, geth_types::Transaction};
 use halo2_proofs::{
     dev::{MockProver, VerifyFailure},
     halo2curves::bn256::Fr,
@@ -26,7 +26,7 @@ fn run<F: Field>(
         TxCircuit::<Fr>::unusable_rows() + TxCircuit::<Fr>::min_num_rows(max_txs, max_calldata),
     );
     // SignVerifyChip -> ECDSAChip -> MainGate instance column
-    let circuit = TxCircuit::<F>::new(max_txs, max_calldata, chain_id, txs);
+    let circuit = TxCircuit::<F>::new(max_txs, max_calldata, chain_id, todo!(), todo!());
 
     let prover = match MockProver::run(k, &circuit, vec![vec![]]) {
         Ok(prover) => prover,
@@ -105,10 +105,10 @@ fn variadic_size_check() {
     let chain_id: u64 = mock::MOCK_CHAIN_ID.as_u64();
     let tx1: Transaction = mock::CORRECT_MOCK_TXS[0].clone().into();
     let tx2: Transaction = mock::CORRECT_MOCK_TXS[1].clone().into();
-    let circuit = TxCircuit::<Fr>::new(MAX_TXS, MAX_CALLDATA, chain_id, vec![tx1.clone()]);
+    let circuit = TxCircuit::<Fr>::new(MAX_TXS, MAX_CALLDATA, chain_id, todo!(), vec![tx1.clone()]);
     let prover1 = MockProver::<Fr>::run(20, &circuit, vec![vec![]]).unwrap();
 
-    let circuit = TxCircuit::<Fr>::new(MAX_TXS, MAX_CALLDATA, chain_id, vec![tx1, tx2]);
+    let circuit = TxCircuit::<Fr>::new(MAX_TXS, MAX_CALLDATA, chain_id, todo!(), vec![tx1, tx2]);
     let prover2 = MockProver::<Fr>::run(20, &circuit, vec![vec![]]).unwrap();
 
     assert_eq!(prover1.fixed(), prover2.fixed());

@@ -18,7 +18,7 @@ use crate::{
     util::{random_linear_combine_word as rlc, Challenges, SubCircuit, SubCircuitConfig},
     witness,
 };
-use eth_types::{geth_types::Transaction, sign_types::SignData, Field, ToLittleEndian, ToScalar};
+use eth_types::{geth_types, sign_types::SignData, Field, ToLittleEndian, ToScalar};
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, Region, Value},
     plonk::{Advice, Column, ConstraintSystem, Error, Expression, Fixed},
@@ -30,10 +30,10 @@ use std::marker::PhantomData;
 
 /// Number of static fields per tx: [nonce, gas, gas_price,
 /// caller_address, callee_address, is_create, value, call_data_length,
-/// call_data_gas_cost, tx_sign_hash].
+/// call_data_gas_cost, return_data_length, return_data_offset, tx_sign_hash].
 /// Note that call data bytes are layed out in the TxTable after all the static
 /// fields arranged by txs.
-pub(crate) const TX_LEN: usize = 10;
+pub(crate) const TX_LEN: usize = 12;
 
 /// Config for TxCircuit
 #[derive(Clone, Debug)]
@@ -146,21 +146,30 @@ pub struct TxCircuit<F: Field> {
     pub max_calldata: usize,
     /// SignVerify chip
     pub sign_verify: SignVerifyChip<F>,
-    /// List of Transactions
-    pub txs: Vec<Transaction>,
     /// Chain ID
     pub chain_id: u64,
+    /// List of Transactions
+    pub txs: Vec<witness::Transaction>,
+    /// List of original transactions
+    pub eth_txs: Vec<geth_types::Transaction>,
 }
 
 impl<F: Field> TxCircuit<F> {
     /// Return a new TxCircuit
-    pub fn new(max_txs: usize, max_calldata: usize, chain_id: u64, txs: Vec<Transaction>) -> Self {
+    pub fn new(
+        max_txs: usize,
+        max_calldata: usize,
+        chain_id: u64,
+        txs: Vec<witness::Transaction>,
+        eth_txs: Vec<geth_types::Transaction>,
+    ) -> Self {
         TxCircuit::<F> {
             max_txs,
             max_calldata,
             sign_verify: SignVerifyChip::new(max_txs),
-            txs,
             chain_id,
+            txs,
+            eth_txs,
         }
     }
 
@@ -193,7 +202,7 @@ impl<F: Field> TxCircuit<F> {
                 )?;
                 offset += 1;
                 // Assign al Tx fields except for call data
-                let tx_default = Transaction::default();
+                let tx_default = witness::Transaction::default();
                 for (i, assigned_sig_verif) in assigned_sig_verifs.iter().enumerate() {
                     let tx = if i < self.txs.len() {
                         &self.txs[i]
@@ -202,11 +211,8 @@ impl<F: Field> TxCircuit<F> {
                     };
 
                     for (tag, value) in [
-                        (TxFieldTag::Nonce, Value::known(F::from(tx.nonce.as_u64()))),
-                        (
-                            TxFieldTag::Gas,
-                            Value::known(F::from(tx.gas_limit.as_u64())),
-                        ),
+                        (TxFieldTag::Nonce, Value::known(F::from(tx.nonce))),
+                        (TxFieldTag::Gas, Value::known(F::from(tx.gas))),
                         (
                             TxFieldTag::GasPrice,
                             challenges
@@ -215,13 +221,13 @@ impl<F: Field> TxCircuit<F> {
                         ),
                         (
                             TxFieldTag::CallerAddress,
-                            Value::known(tx.from.to_scalar().expect("tx.from too big")),
+                            Value::known(tx.caller_address.to_scalar().expect("tx.from too big")),
                         ),
                         (
                             TxFieldTag::CalleeAddress,
-                            Value::known(tx.to_or_zero().to_scalar().expect("tx.to too big")),
+                            Value::known(tx.callee_address.to_scalar().expect("tx.to too big")),
                         ),
-                        (TxFieldTag::IsCreate, Value::known(F::from(tx.is_create()))),
+                        (TxFieldTag::IsCreate, Value::known(F::from(tx.is_create))),
                         (
                             TxFieldTag::Value,
                             challenges
@@ -230,11 +236,19 @@ impl<F: Field> TxCircuit<F> {
                         ),
                         (
                             TxFieldTag::CallDataLength,
-                            Value::known(F::from(tx.call_data.0.len() as u64)),
+                            Value::known(F::from(tx.call_data.len() as u64)),
                         ),
                         (
                             TxFieldTag::CallDataGasCost,
-                            Value::known(F::from(tx.call_data_gas_cost())),
+                            Value::known(F::from(tx.call_data_gas_cost)),
+                        ),
+                        (
+                            TxFieldTag::ReturnDataLength,
+                            Value::known(F::from(tx.return_data.len() as u64)),
+                        ),
+                        (
+                            TxFieldTag::ReturnDataOffset,
+                            Value::known(F::from(tx.return_data_offset)),
                         ),
                         (
                             TxFieldTag::TxSignHash,
@@ -264,7 +278,7 @@ impl<F: Field> TxCircuit<F> {
                 // Assign call data
                 let mut calldata_count = 0;
                 for (i, tx) in self.txs.iter().enumerate() {
-                    for (index, byte) in tx.call_data.0.iter().enumerate() {
+                    for (index, byte) in tx.call_data.iter().enumerate() {
                         assert!(calldata_count < self.max_calldata);
                         config.assign_row(
                             &mut region,
@@ -309,11 +323,12 @@ impl<F: Field> SubCircuit<F> for TxCircuit<F> {
             block.circuits_params.max_txs,
             block.circuits_params.max_calldata,
             block.context.chain_id.as_u64(),
+            block.txs.clone(),
             block
                 .eth_block
                 .transactions
                 .iter()
-                .map(|tx| tx.into())
+                .map(geth_types::Transaction::from)
                 .collect(),
         )
     }
@@ -339,9 +354,10 @@ impl<F: Field> SubCircuit<F> for TxCircuit<F> {
         challenges: &Challenges<Value<F>>,
         layouter: &mut impl Layouter<F>,
     ) -> Result<(), Error> {
-        assert!(self.txs.len() <= self.max_txs);
+        assert_eq!(self.eth_txs.len(), self.txs.len());
+        assert!(self.eth_txs.len() <= self.max_txs);
         let sign_datas: Vec<SignData> = self
-            .txs
+            .eth_txs
             .iter()
             .map(|tx| {
                 tx.sign_data(self.chain_id).map_err(|e| {

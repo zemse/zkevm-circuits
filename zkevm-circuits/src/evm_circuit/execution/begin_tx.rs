@@ -42,6 +42,8 @@ pub(crate) struct BeginTxGadget<F> {
     tx_value: Word<F>,
     tx_call_data_length: Cell<F>,
     tx_call_data_gas_cost: Cell<F>,
+    tx_return_data_length: Cell<F>,
+    tx_return_data_offset: Cell<F>,
     reversion_info: ReversionInfo<F>,
     sufficient_gas_left: RangeCheckGadget<F, N_BYTES_GAS>,
     transfer_with_gas_fee: TransferWithGasFeeGadget<F>,
@@ -77,7 +79,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             reversion_info.is_persistent(),
         ); // rwc_delta += 1
 
-        let [tx_nonce, tx_gas, tx_caller_address, tx_callee_address, tx_is_create, tx_call_data_length, tx_call_data_gas_cost] =
+        let [tx_nonce, tx_gas, tx_caller_address, tx_callee_address, tx_is_create, tx_call_data_length, tx_call_data_gas_cost, tx_return_data_length, tx_return_data_offset] =
             [
                 TxContextFieldTag::Nonce,
                 TxContextFieldTag::Gas,
@@ -86,6 +88,8 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                 TxContextFieldTag::IsCreate,
                 TxContextFieldTag::CallDataLength,
                 TxContextFieldTag::CallDataGasCost,
+                TxContextFieldTag::ReturnDataLength,
+                TxContextFieldTag::ReturnDataOffset,
             ]
             .map(|field_tag| cb.tx_context(tx_id.expr(), field_tag, None));
         let tx_caller_address_is_zero = IsZeroGadget::construct(cb, tx_caller_address.expr());
@@ -343,6 +347,14 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                         CallContextFieldTag::CallDataLength,
                         tx_call_data_length.expr(),
                     ),
+                    (
+                        CallContextFieldTag::ReturnDataLength,
+                        tx_return_data_length.expr(),
+                    ),
+                    (
+                        CallContextFieldTag::ReturnDataOffset,
+                        tx_return_data_offset.expr(),
+                    ),
                     (CallContextFieldTag::Value, tx_value.expr()),
                     (CallContextFieldTag::IsStatic, 0.expr()),
                     (CallContextFieldTag::LastCalleeId, 0.expr()),
@@ -356,7 +368,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                 }
 
                 cb.require_step_state_transition(StepStateTransition {
-                    // 21 reads and writes:
+                    // 23 reads and writes:
                     //   - Write CallContext TxId
                     //   - Write CallContext RwCounterEndOfReversion
                     //   - Write CallContext IsPersistent
@@ -371,6 +383,8 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                     //   - Write CallContext CalleeAddress
                     //   - Write CallContext CallDataOffset
                     //   - Write CallContext CallDataLength
+                    //   - Write CallContext ReturnDataLength
+                    //   - Write CallContext ReturnDataOffset
                     //   - Write CallContext Value
                     //   - Write CallContext IsStatic
                     //   - Write CallContext LastCalleeId
@@ -379,7 +393,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                     //   - Write CallContext IsRoot
                     //   - Write CallContext IsCreate
                     //   - Write CallContext CodeHash
-                    rw_counter: Delta(21.expr() + transfer_with_gas_fee.rw_delta()),
+                    rw_counter: Delta(23.expr() + transfer_with_gas_fee.rw_delta()),
                     call_id: To(call_id.expr()),
                     is_root: To(true.expr()),
                     is_create: To(tx_is_create.expr()),
@@ -406,6 +420,8 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             tx_value,
             tx_call_data_length,
             tx_call_data_gas_cost,
+            tx_return_data_length,
+            tx_return_data_offset,
             reversion_info,
             sufficient_gas_left,
             transfer_with_gas_fee,
@@ -503,6 +519,16 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             region,
             offset,
             Value::known(F::from(tx.call_data_gas_cost)),
+        )?;
+        self.tx_return_data_length.assign(
+            region,
+            offset,
+            Value::known(F::from(tx.return_data.len() as u64)),
+        )?;
+        self.tx_return_data_offset.assign(
+            region,
+            offset,
+            Value::known(F::from(tx.return_data_offset)),
         )?;
         self.reversion_info.assign(
             region,

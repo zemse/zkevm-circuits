@@ -50,7 +50,7 @@ impl<F: Field> Circuit<F> for TxCircuit<F> {
 
         config.keccak_table.dev_load(
             &mut layouter,
-            &keccak_inputs_tx_circuit(&self.txs[..], self.chain_id).map_err(|e| {
+            &keccak_inputs_tx_circuit(/* &self.txs[..] */ todo!(), self.chain_id).map_err(|e| {
                 error!("keccak_inputs_tx_circuit error: {:?}", e);
                 Error::Synthesis
             })?,

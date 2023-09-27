@@ -139,6 +139,18 @@ impl<F: Field> ExecutionGadget<F> for ReturnRevertGadget<F> {
                 CallContextFieldTag::IsPersistent,
                 is_success.expr(),
             );
+            cb.call_context_lookup(
+                false.expr(),
+                None,
+                CallContextFieldTag::ReturnDataLength,
+                range.length().expr(),
+            );
+            cb.call_context_lookup(
+                false.expr(),
+                None,
+                CallContextFieldTag::ReturnDataOffset,
+                range.offset().expr(),
+            );
             cb.require_step_state_transition(StepStateTransition {
                 program_counter: To(0.expr()),
                 stack_pointer: To(STACK_CAPACITY.expr()),

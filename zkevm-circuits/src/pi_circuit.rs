@@ -62,6 +62,8 @@ pub struct TxValues {
     value: Word,
     call_data_len: u64,
     call_data_gas_cost: u64,
+    return_data_len: u64,
+    return_data_offset: u64,
     tx_sign_hash: [u8; 32],
 }
 
@@ -81,8 +83,10 @@ pub struct PublicData {
     /// History hashes contains the most recent 256 block hashes in history,
     /// where the latest one is at history_hashes[history_hashes.len() - 1].
     pub history_hashes: Vec<Word>,
+    /// Witness Transactions
+    pub txs: Vec<witness::Transaction>,
     /// Block Transactions
-    pub transactions: Vec<eth_types::Transaction>,
+    pub eth_txs: Vec<eth_types::Transaction>,
     /// Block State Root
     pub state_root: H256,
     /// Previous block root
@@ -96,7 +100,8 @@ impl Default for PublicData {
         PublicData {
             chain_id: Word::default(),
             history_hashes: vec![],
-            transactions: vec![],
+            txs: vec![],
+            eth_txs: vec![],
             state_root: H256::zero(),
             prev_state_root: H256::zero(),
             block_constants: BlockConstants::default(),
@@ -134,7 +139,7 @@ impl PublicData {
             .try_into()
             .expect("Error converting chain_id to u64");
         let mut tx_vals = vec![];
-        for tx in &self.txs() {
+        for (index, tx) in self.txs().iter().enumerate() {
             let sign_data: SignData = tx
                 .sign_data(chain_id)
                 .expect("Error computing tx_sign_hash");
@@ -150,6 +155,8 @@ impl PublicData {
                 value: tx.value,
                 call_data_len: tx.call_data.len() as u64,
                 call_data_gas_cost: tx.call_data_gas_cost(),
+                return_data_len: self.txs[index].return_data.len() as u64,
+                return_data_offset: self.txs[index].return_data_offset,
                 tx_sign_hash: msg_hash_le,
             });
         }
@@ -166,7 +173,7 @@ impl PublicData {
     }
 
     fn txs(&self) -> Vec<Transaction> {
-        self.transactions.iter().map(Transaction::from).collect()
+        self.eth_txs.iter().map(Transaction::from).collect()
     }
 }
 
@@ -1149,7 +1156,8 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
         let public_data = PublicData {
             chain_id: block.context.chain_id,
             history_hashes: block.context.history_hashes.clone(),
-            transactions: block.eth_block.transactions.clone(),
+            txs: block.txs.clone(),
+            eth_txs: block.eth_block.transactions.clone(),
             state_root: block.eth_block.state_root,
             prev_state_root: H256::from_uint(&block.prev_state_root),
             block_constants: BlockConstants {
@@ -1343,6 +1351,8 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                         ),
                         (TxFieldTag::CallDataLength, F::from(tx.call_data_len)),
                         (TxFieldTag::CallDataGasCost, F::from(tx.call_data_gas_cost)),
+                        (TxFieldTag::ReturnDataLength, F::from(tx.return_data_len)),
+                        (TxFieldTag::ReturnDataOffset, F::from(tx.return_data_offset)),
                         (
                             TxFieldTag::TxSignHash,
                             rlc(tx.tx_sign_hash, self.randomness),
@@ -1531,6 +1541,8 @@ fn raw_public_inputs_col<F: Field>(
             rlc(tx.value.to_le_bytes(), randomness),
             F::from(tx.call_data_len),
             F::from(tx.call_data_gas_cost),
+            F::from(tx.return_data_len),
+            F::from(tx.return_data_offset),
             rlc(tx.tx_sign_hash, randomness),
         ] {
             result[id_offset + offset] = F::from((i + 1) as u64);

@@ -202,6 +202,14 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
                     CallContextField::CallDataLength,
                     call.call_data_length.into(),
                 ),
+                (
+                    CallContextField::ReturnDataLength,
+                    call.return_data_length.into(),
+                ),
+                (
+                    CallContextField::ReturnDataOffset,
+                    call.return_data_offset.into(),
+                ),
                 (CallContextField::Value, call.value),
                 (CallContextField::IsStatic, (call.is_static as usize).into()),
                 (CallContextField::LastCalleeId, 0.into()),

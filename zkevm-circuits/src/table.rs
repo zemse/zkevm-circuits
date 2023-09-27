@@ -112,6 +112,10 @@ pub enum TxFieldTag {
     CallDataLength,
     /// Gas cost for transaction call data (4 for byte == 0, 16 otherwise)
     CallDataGasCost,
+    /// ReturnDataLength for the top level call
+    ReturnDataLength,
+    /// ReturnDataOffset for top level call
+    ReturnDataOffset,
     /// TxSignHash: Hash of the transaction without the signature, used for
     /// signing.
     TxSignHash,

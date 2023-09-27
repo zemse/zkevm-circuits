@@ -31,6 +31,10 @@ pub struct Transaction {
     pub call_data_length: usize,
     /// The gas cost for transaction call data
     pub call_data_gas_cost: u64,
+    /// The return data
+    pub return_data: Vec<u8>,
+    /// Return data offset
+    pub return_data_offset: u64,
     /// The calls made in the transaction
     pub calls: Vec<Call>,
     /// The steps executioned in the transaction
@@ -103,6 +107,18 @@ impl Transaction {
                 Value::known(F::zero()),
                 Value::known(F::from(self.call_data_gas_cost)),
             ],
+            [
+                Value::known(F::from(self.id as u64)),
+                Value::known(F::from(TxContextFieldTag::ReturnDataLength as u64)),
+                Value::known(F::zero()),
+                Value::known(F::from(self.return_data.len() as u64)),
+            ],
+            [
+                Value::known(F::from(self.id as u64)),
+                Value::known(F::from(TxContextFieldTag::ReturnDataOffset as u64)),
+                Value::known(F::zero()),
+                Value::known(F::from(self.return_data_offset)),
+            ],
         ];
         let tx_calldata = self
             .call_data
@@ -134,6 +150,8 @@ pub(super) fn tx_convert(tx: &circuit_input_builder::Transaction, id: usize) -> 
         call_data: tx.tx.call_data.to_vec(),
         call_data_length: tx.tx.call_data.len(),
         call_data_gas_cost: tx.tx.call_data_gas_cost(),
+        return_data: tx.return_data.clone(),
+        return_data_offset: tx.return_data_offset,
         calls: tx.calls().to_vec(),
         steps: tx.steps().iter().map(step_convert).collect(),
     }

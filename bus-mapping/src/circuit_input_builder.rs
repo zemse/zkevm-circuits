@@ -26,7 +26,7 @@ use core::fmt::Debug;
 use eth_types::{
     self, geth_types,
     sign_types::{pk_bytes_le, pk_bytes_swap_endianness, SignData},
-    Address, GethExecStep, GethExecTrace, ToWord, Word,
+    Address, Bytes, GethExecStep, GethExecTrace, ToWord, Word,
 };
 use ethers_providers::JsonRpcClient;
 pub use execution::{
@@ -35,7 +35,7 @@ pub use execution::{
 pub use input_state_ref::CircuitInputStateRef;
 use itertools::Itertools;
 use log::warn;
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 pub use transaction::{Transaction, TransactionContext};
 
 /// Circuit Setup Parameters
@@ -154,6 +154,8 @@ impl<'a> CircuitInputBuilder {
         &mut self,
         eth_tx: &eth_types::Transaction,
         is_success: bool,
+        return_data: Vec<u8>,
+        return_data_offset: u64,
     ) -> Result<Transaction, Error> {
         let call_id = self.block_ctx.rwc.0;
 
@@ -168,7 +170,15 @@ impl<'a> CircuitInputBuilder {
             ),
         );
 
-        Transaction::new(call_id, &self.sdb, &mut self.code_db, eth_tx, is_success)
+        Transaction::new(
+            call_id,
+            &self.sdb,
+            &mut self.code_db,
+            eth_tx,
+            is_success,
+            return_data,
+            return_data_offset,
+        )
     }
 
     /// Iterate over all generated CallContext RwCounterEndOfReversion
@@ -268,7 +278,24 @@ impl<'a> CircuitInputBuilder {
         geth_trace: &GethExecTrace,
         is_last_tx: bool,
     ) -> Result<(), Error> {
-        let mut tx = self.new_tx(eth_tx, !geth_trace.failed)?;
+        let last_struct_log = geth_trace.struct_logs[geth_trace.struct_logs.len() - 1].clone();
+
+        let (return_data, return_data_offset) =
+            if last_struct_log.op == eth_types::evm_types::OpcodeId::RETURN {
+                // last step opcode is RETURN then use the stack items
+                let return_data = Bytes::from_str(geth_trace.return_value.as_str())
+                    .unwrap()
+                    .to_vec();
+                let return_data_offset = last_struct_log.stack.nth_last(0)?.as_u64();
+                let return_data_length = last_struct_log.stack.nth_last(1)?.as_u64();
+                assert_eq!(return_data.len(), return_data_length as usize);
+                (return_data, return_data_offset)
+            } else {
+                // consider return data as empty
+                (vec![], 0u64)
+            };
+
+        let mut tx = self.new_tx(eth_tx, !geth_trace.failed, return_data, return_data_offset)?;
         let mut tx_ctx = TransactionContext::new(eth_tx, geth_trace, is_last_tx)?;
 
         // Generate BeginTx step

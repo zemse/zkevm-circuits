@@ -88,6 +88,18 @@ impl Opcode for ReturnRevert {
                 CallContextField::IsPersistent,
                 call.is_persistent.to_word(),
             );
+            state.call_context_read(
+                &mut exec_step,
+                call.call_id,
+                CallContextField::ReturnDataLength,
+                call.return_data_length.to_word(),
+            );
+            state.call_context_read(
+                &mut exec_step,
+                call.call_id,
+                CallContextField::ReturnDataOffset,
+                call.return_data_offset.to_word(),
+            );
         }
 
         // Case C in the specs.

@@ -181,6 +181,10 @@ impl TransactionContext {
 pub struct Transaction {
     /// The raw transaction fields
     pub tx: geth_types::Transaction,
+    /// The transaction return data
+    pub return_data: Vec<u8>,
+    /// Return data offset on the top level call
+    pub return_data_offset: u64,
     /// Calls made in the transaction
     pub(crate) calls: Vec<Call>,
     /// Execution steps
@@ -195,6 +199,8 @@ impl Transaction {
         code_db: &mut CodeDB,
         eth_tx: &eth_types::Transaction,
         is_success: bool,
+        return_data: Vec<u8>,
+        return_data_offset: u64,
     ) -> Result<Self, Error> {
         let (found, _) = sdb.get_account(&eth_tx.from);
         if !found {
@@ -221,6 +227,8 @@ impl Transaction {
                 depth: 1,
                 value: eth_tx.value,
                 call_data_length: eth_tx.input.as_ref().len() as u64,
+                return_data_length: return_data.len() as u64,
+                return_data_offset,
                 ..Default::default()
             }
         } else {
@@ -245,6 +253,8 @@ impl Transaction {
 
         Ok(Self {
             tx: eth_tx.into(),
+            return_data,
+            return_data_offset,
             calls: vec![call],
             steps: Vec::new(),
         })
