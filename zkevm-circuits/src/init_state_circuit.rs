@@ -23,7 +23,7 @@ pub struct InitStateCircuitConfig<F: Field> {
     block_table: BlockTable,
     init_state_table: InitStateTable,
     rw_table: RwTable,
-    axiom_eth_config: EthConfig<F>,
+    // axiom_eth_config: EthConfig<F>,
     _marker: PhantomData<F>,
 }
 
@@ -87,7 +87,7 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             block_table,
             init_state_table,
             rw_table,
-            axiom_eth_config: EthConfig::configure(meta, eth_config_params),
+            // axiom_eth_config: EthConfig::configure(meta, eth_config_params),
             _marker: PhantomData,
         }
     }
@@ -130,39 +130,39 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
             .load(layouter, &self.rws, challenges.evm_word())?;
 
         // Assign witness to link the storage reads to the state root.
-        let axiom_eth_block_storage_circuit = EthBlockStorageCircuitGeneric::new(
-            self.axiom_inputs.clone(),
-            axiom_eth::Network::Goerli,
-        );
+        // let axiom_eth_block_storage_circuit = EthBlockStorageCircuitGeneric::new(
+        //     self.axiom_inputs.clone(),
+        //     axiom_eth::Network::Goerli,
+        // );
 
-        let builder = RlcThreadBuilder::new(false);
-        let axiom_eth_circuit_builder = axiom_eth_block_storage_circuit.create(
-            builder,
-            Some(RlcThreadBreakPoints {
-                gate: vec![
-                    vec![
-                        524226, 524226, 524228, 524228, 524228, 524228, 524227, 524228, 524227,
-                        524228, 524227, 524228, 524226, 524226, 524226, 524226,
-                    ],
-                    vec![
-                        524228, 524228, 524226, 524228, 524228, 524228, 524228, 524228, 524228,
-                    ],
-                    vec![],
-                ],
-                rlc: vec![524227],
-            }),
-        );
-        axiom_eth_circuit_builder
-            .synthesize(
-                config.axiom_eth_config.clone(),
-                layouter.namespace(|| "axiom"),
-            )
-            .unwrap();
+        // let builder = RlcThreadBuilder::new(false);
+        // let axiom_eth_circuit_builder = axiom_eth_block_storage_circuit.create(
+        //     builder,
+        //     Some(RlcThreadBreakPoints {
+        //         gate: vec![
+        //             vec![
+        //                 524226, 524226, 524228, 524228, 524228, 524228, 524227, 524228, 524227,
+        //                 524228, 524227, 524228, 524226, 524226, 524226, 524226,
+        //             ],
+        //             vec![
+        //                 524228, 524228, 524226, 524228, 524228, 524228, 524228, 524228, 524228,
+        //             ],
+        //             vec![],
+        //         ],
+        //         rlc: vec![524227],
+        //     }),
+        // );
+        // axiom_eth_circuit_builder
+        //     .synthesize(
+        //         config.axiom_eth_config.clone(),
+        //         layouter.namespace(|| "axiom"),
+        //     )
+        //     .unwrap();
 
-        println!(
-            "axiom_eth_circuit_builder.assigned_instances {:#?}",
-            axiom_eth_circuit_builder.assigned_instances
-        );
+        // println!(
+        //     "axiom_eth_circuit_builder.assigned_instances {:#?}",
+        //     axiom_eth_circuit_builder.assigned_instances
+        // );
 
         Ok(())
     }
@@ -173,6 +173,7 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
     }
 
     fn instance(&self) -> Vec<Vec<F>> {
-        vec![vec![]] // TODO remove this instance
+        // vec![vec![]] // TODO remove this instance
+        vec![] // TODO remove this instance
     }
 }
