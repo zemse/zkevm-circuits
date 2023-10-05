@@ -23,7 +23,8 @@ fn run<F: Field>(
     max_calldata: usize,
 ) -> Result<(), Vec<VerifyFailure>> {
     let k = log2_ceil(
-        TxCircuit::<Fr>::unusable_rows() + TxCircuit::<Fr>::min_num_rows(max_txs, max_calldata),
+        TxCircuit::<Fr>::unusable_rows()
+            + TxCircuit::<Fr>::min_num_rows(max_txs, max_calldata, todo!()),
     );
     // SignVerifyChip -> ECDSAChip -> MainGate instance column
     let circuit = TxCircuit::<F>::new(max_txs, max_calldata, chain_id, todo!(), todo!());

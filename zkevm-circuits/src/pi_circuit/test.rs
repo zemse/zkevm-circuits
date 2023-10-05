@@ -64,9 +64,7 @@ fn test_simple_pi() {
 
     let n_tx = 4;
     for i in 0..n_tx {
-        public_data
-            .transactions
-            .push(CORRECT_MOCK_TXS[i].clone().into());
+        public_data.eth_txs.push(CORRECT_MOCK_TXS[i].clone().into());
     }
 
     let k = 17;
@@ -116,9 +114,7 @@ fn variadic_size_check() {
 
     let n_tx = 2;
     for i in 0..n_tx {
-        pub_dat_1
-            .transactions
-            .push(CORRECT_MOCK_TXS[i].clone().into());
+        pub_dat_1.eth_txs.push(CORRECT_MOCK_TXS[i].clone().into());
     }
 
     let mut pub_dat_2 = PublicData {
@@ -128,9 +124,7 @@ fn variadic_size_check() {
 
     let n_tx = 4;
     for i in 0..n_tx {
-        pub_dat_2
-            .transactions
-            .push(CORRECT_MOCK_TXS[i].clone().into());
+        pub_dat_2.eth_txs.push(CORRECT_MOCK_TXS[i].clone().into());
     }
 
     run_size_check::<Fr, MAX_TXS, MAX_CALLDATA>([pub_dat_1, pub_dat_2]);

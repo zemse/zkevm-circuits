@@ -175,7 +175,8 @@ impl<F: Field> TxCircuit<F> {
 
     /// Return the minimum number of rows required to prove an input of a
     /// particular size.
-    pub fn min_num_rows(txs_len: usize, call_data_len: usize) -> usize {
+    pub fn min_num_rows(txs_len: usize, call_data_len: usize, return_data_len: usize) -> usize {
+        // TODO use return_data_len below
         let tx_table_len = txs_len * TX_LEN + call_data_len;
         std::cmp::max(tx_table_len, SignVerifyChip::<F>::min_num_rows(txs_len))
     }
@@ -303,6 +304,35 @@ impl<F: Field> TxCircuit<F> {
                     )?;
                     offset += 1;
                 }
+
+                // Assign return data
+                let mut returndata_count = 0;
+                for (i, tx) in self.txs.iter().enumerate() {
+                    for (index, byte) in tx.return_data.iter().enumerate() {
+                        assert!(returndata_count < self.max_calldata);
+                        config.assign_row(
+                            &mut region,
+                            offset,
+                            i + 1, // tx_id
+                            TxFieldTag::ReturnData,
+                            index,
+                            Value::known(F::from(*byte as u64)),
+                        )?;
+                        offset += 1;
+                        returndata_count += 1;
+                    }
+                }
+                for _ in returndata_count..self.max_calldata {
+                    config.assign_row(
+                        &mut region,
+                        offset,
+                        0, // tx_id
+                        TxFieldTag::ReturnData,
+                        0,
+                        Value::known(F::zero()),
+                    )?;
+                    offset += 1;
+                }
                 Ok(())
             },
         )
@@ -339,9 +369,11 @@ impl<F: Field> SubCircuit<F> for TxCircuit<F> {
             Self::min_num_rows(
                 block.txs.len(),
                 block.txs.iter().map(|tx| tx.call_data.len()).sum(),
+                block.txs.iter().map(|tx| tx.return_data.len()).sum(),
             ),
             Self::min_num_rows(
                 block.circuits_params.max_txs,
+                block.circuits_params.max_calldata,
                 block.circuits_params.max_calldata,
             ),
         )

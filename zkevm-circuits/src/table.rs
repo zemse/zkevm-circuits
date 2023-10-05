@@ -121,6 +121,8 @@ pub enum TxFieldTag {
     TxSignHash,
     /// CallData
     CallData,
+    /// ReturnData
+    ReturnData,
 }
 impl_expr!(TxFieldTag);
 
@@ -174,6 +176,13 @@ impl TxTable {
             sum_txs_calldata,
             max_calldata,
         );
+        let sum_txs_returndata: usize = txs.iter().map(|tx| tx.return_data.len()).sum();
+        assert!(
+            sum_txs_returndata <= max_calldata,
+            "sum_txs_returndata <= max_calldata: sum_txs_returndata={}, max_calldata={}",
+            sum_txs_returndata,
+            max_calldata,
+        );
 
         fn assign_row<F: Field>(
             region: &mut Region<'_, F>,
@@ -221,6 +230,7 @@ impl TxTable {
                 // the tx calldata.  This is required to achieve a constant fixed column tag
                 // regardless of the number of input txs or the calldata size of each tx.
                 let mut calldata_assignments: Vec<[Value<F>; 4]> = Vec::new();
+                let mut returndata_assignments: Vec<[Value<F>; 4]> = Vec::new();
                 // Assign Tx data (all tx fields except for calldata)
                 let padding_txs: Vec<_> = (txs.len()..max_txs)
                     .map(|i| Transaction {
@@ -229,12 +239,13 @@ impl TxTable {
                     })
                     .collect();
                 for tx in txs.iter().chain(padding_txs.iter()) {
-                    let [tx_data, tx_calldata] = tx.table_assignments(*challenges);
+                    let [tx_data, tx_calldata, tx_returndata] = tx.table_assignments(*challenges);
                     for row in tx_data {
                         assign_row(&mut region, offset, &advice_columns, &self.tag, &row, "")?;
                         offset += 1;
                     }
                     calldata_assignments.extend(tx_calldata.iter());
+                    returndata_assignments.extend(tx_returndata.iter());
                 }
                 // Assign Tx calldata
                 let padding_calldata = (sum_txs_calldata..max_calldata).map(|_| {
@@ -246,6 +257,19 @@ impl TxTable {
                     ]
                 });
                 for row in calldata_assignments.into_iter().chain(padding_calldata) {
+                    assign_row(&mut region, offset, &advice_columns, &self.tag, &row, "")?;
+                    offset += 1;
+                }
+                // Assign Tx returndata
+                let padding_returndata = (sum_txs_returndata..max_calldata).map(|_| {
+                    [
+                        Value::known(F::zero()),
+                        Value::known(F::from(TxContextFieldTag::ReturnData as u64)),
+                        Value::known(F::zero()),
+                        Value::known(F::zero()),
+                    ]
+                });
+                for row in returndata_assignments.into_iter().chain(padding_returndata) {
                     assign_row(&mut region, offset, &advice_columns, &self.tag, &row, "")?;
                     offset += 1;
                 }

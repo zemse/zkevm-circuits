@@ -47,7 +47,7 @@ impl Transaction {
     pub fn table_assignments<F: Field>(
         &self,
         challenges: Challenges<Value<F>>,
-    ) -> [Vec<[Value<F>; 4]>; 2] {
+    ) -> [Vec<[Value<F>; 4]>; 3] {
         let tx_data = vec![
             [
                 Value::known(F::from(self.id as u64)),
@@ -133,7 +133,20 @@ impl Transaction {
                 ]
             })
             .collect();
-        [tx_data, tx_calldata]
+        let tx_returndata = self
+            .return_data
+            .iter()
+            .enumerate()
+            .map(|(idx, byte)| {
+                [
+                    Value::known(F::from(self.id as u64)),
+                    Value::known(F::from(TxContextFieldTag::ReturnData as u64)),
+                    Value::known(F::from(idx as u64)),
+                    Value::known(F::from(*byte as u64)),
+                ]
+            })
+            .collect();
+        [tx_data, tx_calldata, tx_returndata]
     }
 }
 
