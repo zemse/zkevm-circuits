@@ -362,12 +362,16 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
                 let q_tx_table = meta.query_selector(q_tx_table);
                 let tx_value = meta.query_advice(tx_value, Rotation::cur());
                 let q_tx_calldata = meta.query_selector(q_tx_calldata);
+                let q_tx_returndata = meta.query_selector(q_tx_returndata);
                 let rpi_tx_value = meta.query_advice(
                     raw_public_inputs,
                     Rotation((offset + 2 * tx_table_len) as i32),
                 );
 
-                vec![or::expr([q_tx_table, q_tx_calldata]) * (tx_value - rpi_tx_value)]
+                vec![
+                    or::expr([q_tx_table, q_tx_calldata, q_tx_returndata])
+                        * (tx_value - rpi_tx_value),
+                ]
             },
         );
 
@@ -628,11 +632,15 @@ impl<F: Field> PiCircuitConfig<F> {
     #[inline]
     fn circuit_len(&self) -> usize {
         // +1 empty row in block table, +1 empty row in tx_table
-        BLOCK_LEN + 1 + EXTRA_LEN + 3 * (TX_LEN * self.max_txs + 1) + self.max_calldata // TODO add return data to this
+        BLOCK_LEN
+            + 1
+            + EXTRA_LEN
+            + 3 * (TX_LEN * self.max_txs + 1)
+            + (self.max_calldata + 1)
+            + (self.max_calldata + 1) // returndata
     }
 
     fn assign_tx_empty_row(&self, region: &mut Region<'_, F>, offset: usize) -> Result<(), Error> {
-        // println!("offset {offset} tx empty row");
         region.assign_advice(
             || "tx_id",
             self.tx_table.tx_id,
@@ -689,6 +697,7 @@ impl<F: Field> PiCircuitConfig<F> {
         )?;
         Ok(())
     }
+
     /// Assigns a tx_table row and stores the values in a vec for the
     /// raw_public_inputs column
     #[allow(clippy::too_many_arguments)]
@@ -702,7 +711,6 @@ impl<F: Field> PiCircuitConfig<F> {
         tx_value: F,
         raw_pi_vals: &mut [F],
     ) -> Result<(), Error> {
-        // println!("offset {offset} tx row");
         let tx_id = F::from(tx_id as u64);
         // tx_id_inv = (tag - CallDataLength)^(-1)
         let tx_id_inv = if tag != TxFieldTag::CallDataLength {
@@ -804,8 +812,6 @@ impl<F: Field> PiCircuitConfig<F> {
         // Assign vals to raw_public_inputs column
         let tx_table_len = TX_LEN * self.max_txs + 1;
         let calldata_offset = tx_table_len + offset;
-        // println!("offset {calldata_offset} tx calldata row tx_id {tx_id} tx_id_next
-        // {tx_id_next}");
 
         let tx_id = F::from(tx_id as u64);
         let tx_id_inv = tx_id.invert().unwrap_or(F::zero());
@@ -907,10 +913,7 @@ impl<F: Field> PiCircuitConfig<F> {
         // Assign vals to raw_public_inputs column
         let tx_table_len = TX_LEN * self.max_txs + 1;
         let calldata_len = self.max_calldata;
-        let returndata_offset = tx_table_len + calldata_len + offset;
-        // println!(
-        //     "offset {returndata_offset} tx returndata row, tx_id {tx_id} tx_id_next {tx_id_next}"
-        // );
+        let returndata_offset = tx_table_len + calldata_len + offset + 1;
 
         let tx_id = F::from(tx_id as u64);
         let tx_id_inv = tx_id.invert().unwrap_or(F::zero());
@@ -980,19 +983,19 @@ impl<F: Field> PiCircuitConfig<F> {
             || Value::known(gas_cost),
         )?;
 
-        // TODO assign into the raw public inputs column
-        // let value_offset = BLOCK_LEN + 1 + EXTRA_LEN + tx_table_len;
+        // extra one in the end for empty row after calldata
+        let value_offset = BLOCK_LEN + 1 + EXTRA_LEN + 3 * tx_table_len + (self.max_calldata + 1);
 
-        // region.assign_advice(
-        //     || "raw_pi.tx_value",
-        //     self.raw_public_inputs,
-        //     offset + value_offset,
-        //     || Value::known(tx_value),
-        // )?;
+        region.assign_advice(
+            || "raw_pi.tx_value",
+            self.raw_public_inputs,
+            offset + value_offset,
+            || Value::known(tx_value),
+        )?;
 
-        // // Add copy to vec
-        // raw_pi_vals[offset + value_offset] = tx_value;
-        //
+        // Add copy to vec
+        raw_pi_vals[offset + value_offset] = tx_value;
+
         Ok(())
     }
 
@@ -1319,7 +1322,9 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
         // - Rotation(BLOCK_LEN + 1 + EXTRA_LEN + max_txs * TX_LEN + 1)
         // - Rotation(BLOCK_LEN + 1 + EXTRA_LEN + 2 * (max_txs * TX_LEN + 1))
         // so returns 7 unusable rows.
-        7
+        // 7
+        // Return data added additional unusable row
+        8
     }
 
     fn new_from_block(block: &witness::Block<F>) -> Self {
@@ -1361,15 +1366,13 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
         };
         let calldata_len = block.txs.iter().map(|tx| tx.call_data.len()).sum();
         // TODO include return data length here
-        // let returndata_len = block.txs.iter().map(|tx| tx.return_data.len()).sum();
+        let returndata_len = block.txs.iter().map(|tx| tx.return_data.len()).sum();
         (
-            row_num(block.txs.len(), calldata_len, 0),
-            // row_num(block.txs.len(), calldata_len, returndata_len),
+            row_num(block.txs.len(), calldata_len, returndata_len),
             row_num(
                 block.circuits_params.max_txs,
                 block.circuits_params.max_calldata,
-                0,
-                // block.circuits_params.max_calldata,
+                block.circuits_params.max_calldata,
             ),
         )
     }
@@ -1384,7 +1387,12 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
         );
         assert_eq!(
             rlc_rpi_col.len(),
-            BLOCK_LEN + 1 + EXTRA_LEN + 3 * (TX_LEN * self.max_txs + 1) + self.max_calldata /* TODO include return data length here */
+            BLOCK_LEN
+                + 1
+                + EXTRA_LEN
+                + 3 * (TX_LEN * self.max_txs + 1)
+                + (self.max_calldata + 1)
+                + (self.max_calldata + 1) // return data length
         );
 
         // Computation of raw_pulic_inputs
@@ -1605,16 +1613,24 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                     )?;
                     offset += 1;
                 }
-                // NOTE: we add this empty row so as to pass mock prover's check
+                // NOTE: we add this empty row after calldata so as to pass mock prover's check
                 //      otherwise it will emit CellNotAssigned Error
                 let tx_table_len = TX_LEN * self.max_txs + 1;
                 config.assign_tx_empty_row(&mut region, tx_table_len + offset)?;
+
+                let rpi_value_offset = BLOCK_LEN + 1 + EXTRA_LEN + 3 * tx_table_len;
+                region.assign_advice(
+                    || "raw_pi.tx_value",
+                    config.raw_public_inputs,
+                    rpi_value_offset + offset,
+                    || Value::known(F::zero()),
+                )?;
 
                 // Tx Table ReturnData
                 let mut returndata_count = 0;
                 config.q_returndata_start.enable(&mut region, offset)?;
                 // the return data bytes assignment starts at offset 0
-                offset = 1;
+                offset = 0;
                 let txs = self.public_data.txs.clone();
                 for (i, tx) in self.public_data.txs.iter().enumerate() {
                     let return_data_length = tx.return_data.len();
@@ -1670,10 +1686,20 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                     )?;
                     offset += 1;
                 }
-                // // NOTE: we add this empty row so as to pass mock prover's check
-                // //      otherwise it will emit CellNotAssigned Error
-                let call_data_len = self.max_txs * self.max_calldata;
+                // NOTE: we add this empty row after returndata so as to pass mock prover's check
+                //      otherwise it will emit CellNotAssigned Error
+                let call_data_len = self.max_txs * self.max_calldata + 1;
                 config.assign_tx_empty_row(&mut region, tx_table_len + call_data_len + offset)?;
+
+                // assign rpi corresponding to the empty row added above
+                let rpi_value_offset =
+                    BLOCK_LEN + 1 + EXTRA_LEN + 3 * tx_table_len + (self.max_calldata + 1);
+                region.assign_advice(
+                    || "raw_pi.tx_value",
+                    config.raw_public_inputs,
+                    rpi_value_offset + offset,
+                    || Value::known(F::zero()),
+                )?;
 
                 // rpi_rlc and rand_rpi cols
                 let (rpi_rand, rpi_rlc) =
@@ -1710,8 +1736,15 @@ fn raw_public_inputs_col<F: Field>(
     let txs = public_data.get_tx_table_values();
 
     let mut offset = 0;
-    let mut result =
-        vec![F::zero(); BLOCK_LEN + 1 + EXTRA_LEN + 3 * (TX_LEN * max_txs + 1) + max_calldata]; // TODO add return data length here
+    let mut result = vec![
+        F::zero();
+        BLOCK_LEN
+            + 1
+            + EXTRA_LEN
+            + 3 * (TX_LEN * max_txs + 1)
+            + (max_calldata + 1)
+            + (max_calldata + 1) // max return data
+    ];
 
     //  Insert Block Values
     // zero row
@@ -1806,21 +1839,28 @@ fn raw_public_inputs_col<F: Field>(
         result[value_offset + offset] = F::zero();
         offset += 1;
     }
+
+    // empty row after calldata
+    offset += 1;
+
     // TODO add return data entries here
     // Tx Table ReturnData
-    // let mut returndata_count = 0;
-    // for (_i, tx) in public_data.txs.iter().enumerate() {
-    //     for (_index, byte) in tx.return_data.iter().enumerate() {
-    //         assert!(returndata_count < max_calldata);
-    //         result[value_offset + offset] = F::from(*byte as u64);
-    //         offset += 1;
-    //         returndata_count += 1;
-    //     }
-    // }
-    // for _ in returndata_count..max_calldata {
-    //     result[value_offset + offset] = F::zero();
-    //     offset += 1;
-    // }
+    let mut returndata_count = 0;
+    for (_i, tx) in public_data.txs.iter().enumerate() {
+        for (_index, byte) in tx.return_data.iter().enumerate() {
+            assert!(returndata_count < max_calldata);
+            result[value_offset + offset] = F::from(*byte as u64);
+            offset += 1;
+            returndata_count += 1;
+        }
+    }
+    for _ in returndata_count..max_calldata {
+        result[value_offset + offset] = F::zero();
+        offset += 1;
+    }
+
+    // empty row after returndata, commenting bcz of unused assignment warning
+    // offset += 1;
 
     result
 }
