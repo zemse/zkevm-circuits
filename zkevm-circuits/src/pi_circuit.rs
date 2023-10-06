@@ -19,7 +19,7 @@ use param::*;
 use std::marker::PhantomData;
 
 use crate::{
-    table::{BlockTable, LookupTable, TxFieldTag, TxTable},
+    table::{BlockTable, LookupTable, RwTable, TxFieldTag, TxTable},
     tx_circuit::TX_LEN,
     util::{random_linear_combine_word as rlc, Challenges, SubCircuit, SubCircuitConfig},
     witness,
@@ -198,6 +198,7 @@ pub struct PiCircuitConfig<F: Field> {
     fixed_u16: Column<Fixed>,
     calldata_gas_cost: Column<Advice>,
     is_final: Column<Advice>,
+    tx_returndata_offset: Column<Advice>,
 
     raw_public_inputs: Column<Advice>,
     rpi_rlc_acc: Column<Advice>,
@@ -211,6 +212,7 @@ pub struct PiCircuitConfig<F: Field> {
     // External tables
     block_table: BlockTable,
     tx_table: TxTable,
+    rw_table: RwTable,
 }
 
 /// Circuit configuration arguments
@@ -223,6 +225,8 @@ pub struct PiCircuitConfigArgs {
     pub tx_table: TxTable,
     /// BlockTable
     pub block_table: BlockTable,
+    /// RwTable
+    pub rw_table: RwTable,
 }
 
 impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
@@ -236,6 +240,7 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
             max_calldata,
             block_table,
             tx_table,
+            rw_table,
         }: Self::ConfigArgs,
     ) -> Self {
         let q_block_table = meta.selector();
@@ -260,6 +265,8 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
         let fixed_u16 = meta.fixed_column();
         let calldata_gas_cost = meta.advice_column_in(SecondPhase);
         let is_final = meta.advice_column();
+        // let is_active_returndata = meta.advice_column();
+        let tx_returndata_offset = meta.advice_column();
 
         let raw_public_inputs = meta.advice_column_in(SecondPhase);
         let rpi_rlc_acc = meta.advice_column_in(SecondPhase);
@@ -548,6 +555,63 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
             ]
         });
 
+        meta.lookup_any("returndata in rw table memory", |meta| {
+            // rw table
+            let call_id = meta.query_advice(rw_table.id, Rotation::cur());
+            let mem_address = meta.query_advice(rw_table.address, Rotation::cur());
+            let byte = meta.query_advice(rw_table.value, Rotation::cur());
+            let is_write = meta.query_advice(rw_table.is_write, Rotation::cur());
+
+            // tx table
+            let q_is_returndata = meta.query_selector(q_tx_returndata);
+            let tx_returndata_offset = meta.query_advice(tx_returndata_offset, Rotation::cur());
+            let tx_tag_index = meta.query_advice(tx_table.index, Rotation::cur());
+            let tx_value = meta.query_advice(tx_table.value, Rotation::cur());
+            let is_tx_id_nonzero = not::expr(tx_id_is_zero_config.expr());
+
+            // ON for just the non-empty returndata rows.
+            let condition = q_is_returndata * is_tx_id_nonzero;
+
+            vec![
+                // call id should be 1 for top level call of first transaction
+                (condition.expr() * 1.expr(), call_id),
+                // memory address should be returndataoffset (in memory) + index
+                (
+                    condition.expr() * (tx_returndata_offset + tx_tag_index),
+                    mem_address,
+                ),
+                // byte should match with the witness in tx return data
+                (condition.expr() * tx_value, byte),
+                // should be a write
+                (condition.expr() * 1.expr(), is_write),
+            ]
+        });
+
+        meta.lookup_any("returndata offset advice column", |meta| {
+            let q_is_returndata = meta.query_selector(q_tx_returndata);
+            let is_tx_id_nonzero = not::expr(tx_id_is_zero_config.expr());
+
+            // ON for just the non-empty returndata rows.
+            let condition = q_is_returndata * is_tx_id_nonzero;
+
+            // tx table
+            let tx_id = meta.query_advice(tx_table.tx_id, Rotation::cur());
+            let tx_tag = meta.query_fixed(tx_table.tag, Rotation::cur());
+            let tx_value = meta.query_advice(tx_table.value, Rotation::cur());
+            let tx_returndata_offset = meta.query_advice(tx_returndata_offset, Rotation::cur());
+
+            // returndata_offset witnessed in tx_table in the returndata section is exactly the same
+            // value as witnessed in TxFieldTag::ReturnDataOffset earlier in the table.
+            vec![
+                (condition.expr() * tx_id.expr(), tx_id),
+                (
+                    condition.expr() * TxFieldTag::ReturnDataOffset.expr(),
+                    tx_tag,
+                ),
+                (condition.expr() * tx_returndata_offset.expr(), tx_value),
+            ]
+        });
+
         // Test if tx tag equals to CallDataLength
         let tx_tag_is_cdl_config = IsZeroChip::configure(
             meta,
@@ -613,6 +677,7 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
             tx_id_inv,
             tx_value_inv,
             tx_id_diff_inv,
+            tx_returndata_offset,
             fixed_u16,
             calldata_gas_cost,
             is_final,
@@ -622,6 +687,7 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
             q_not_end,
             q_end,
             pi,
+            rw_table,
             _marker: PhantomData,
         }
     }
@@ -908,6 +974,7 @@ impl<F: Field> PiCircuitConfig<F> {
         tx_value: F,
         is_final: bool,
         gas_cost: F,
+        tx_returndata_offset: F,
         raw_pi_vals: &mut [F],
     ) -> Result<(), Error> {
         // Assign vals to raw_public_inputs column
@@ -981,6 +1048,12 @@ impl<F: Field> PiCircuitConfig<F> {
             self.calldata_gas_cost,
             returndata_offset,
             || Value::known(gas_cost),
+        )?;
+        region.assign_advice(
+            || "tx_returndata_offset",
+            self.tx_returndata_offset,
+            returndata_offset,
+            || Value::known(tx_returndata_offset),
         )?;
 
         // extra one in the end for empty row after calldata
@@ -1666,6 +1739,7 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                             F::from(*byte as u64),
                             is_final,
                             gas_cost,
+                            F::from(tx.return_data_offset),
                             &mut raw_pi_vals,
                         )?;
                         offset += 1;
@@ -1682,6 +1756,7 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
                         F::zero(),
                         false,
                         F::zero(),
+                        F::from(0),
                         &mut raw_pi_vals,
                     )?;
                     offset += 1;

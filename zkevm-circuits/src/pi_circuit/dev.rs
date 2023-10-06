@@ -63,6 +63,7 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize> Circuit<F>
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
         let block_table = BlockTable::construct(meta);
         let tx_table = TxTable::construct(meta);
+        let rw_table = RwTable::construct(meta);
         (
             PiCircuitConfig::new(
                 meta,
@@ -71,6 +72,7 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize> Circuit<F>
                     max_calldata: MAX_CALLDATA,
                     block_table,
                     tx_table,
+                    rw_table,
                 },
             ),
             Challenges::construct(meta),
