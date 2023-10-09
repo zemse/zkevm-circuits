@@ -258,6 +258,7 @@ pub struct RwRow<F> {
     pub(crate) value_prev: F,
     pub(crate) aux1: F,
     pub(crate) aux2: F,
+    pub(crate) is_state: F,
 }
 
 impl<F: Field> RwRow<F> {
@@ -403,6 +404,13 @@ impl Rw {
             aux2: self
                 .committed_value_assignment(randomness)
                 .unwrap_or_default(),
+            is_state: if self.tag() == RwTableTag::Account
+                || self.tag() == RwTableTag::AccountStorage
+            {
+                F::one()
+            } else {
+                F::zero()
+            },
         }
     }
 
@@ -429,6 +437,13 @@ impl Rw {
                 self.committed_value_assignment(randomness)
                     .unwrap_or_default()
             }),
+            is_state: if self.tag() == RwTableTag::Account
+                || self.tag() == RwTableTag::AccountStorage
+            {
+                Value::known(F::one())
+            } else {
+                Value::known(F::zero())
+            },
         }
     }
 

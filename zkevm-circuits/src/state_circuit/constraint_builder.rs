@@ -31,6 +31,7 @@ pub struct RwTableQueries<F: Field> {
     pub value_prev: Expression<F>, // meta.query(value, Rotation::prev())
     pub value_prev_column: Expression<F>, /* meta.query(prev_value, Rotation::cur())
                                     * TODO: aux1 and aux2 */
+    pub is_state: Expression<F>,
 }
 
 #[derive(Clone)]
@@ -281,6 +282,12 @@ impl<F: Field> ConstraintBuilder<F> {
         // ref. spec 4.0. Unused keys are 0
         self.require_zero("field_tag is 0 for AccountStorage", q.field_tag());
 
+        // enforce is_state to be for all account storage entries
+        self.require_equal(
+            "is_state should be 1",
+            q.rw_table.is_state.clone(),
+            1.expr(),
+        );
         // value = 0 means the leaf doesn't exist. 0->0 transition requires a
         // non-existing proof.
         let is_non_exist = q.is_non_exist();
@@ -412,6 +419,13 @@ impl<F: Field> ConstraintBuilder<F> {
             "field_tag in AccountFieldTag range",
             q.field_tag(),
             set::<F, AccountFieldTag>(),
+        );
+
+        // enforce is_state to be for all account entries
+        self.require_equal(
+            "is_state should be 1",
+            q.rw_table.is_state.clone(),
+            1.expr(),
         );
 
         // We use code_hash = 0 as non-existing account state.  code_hash: 0->0

@@ -478,6 +478,8 @@ pub struct RwTable {
     pub aux1: Column<Advice>,
     /// Aux2 (Committed Value)
     pub aux2: Column<Advice>,
+    /// Is State
+    pub is_state: Column<Advice>,
 }
 
 impl<F: Field> LookupTable<F> for RwTable {
@@ -494,6 +496,7 @@ impl<F: Field> LookupTable<F> for RwTable {
             self.value_prev.into(),
             self.aux1.into(),
             self.aux2.into(),
+            // self.is_state.into(), // some lookup fails after adding this
         ]
     }
 
@@ -510,6 +513,7 @@ impl<F: Field> LookupTable<F> for RwTable {
             String::from("value_prev"),
             String::from("aux1"),
             String::from("aux2"),
+            // String::from("is_state"), // some lookup fails after adding this
         ]
     }
 }
@@ -530,6 +534,7 @@ impl RwTable {
             // TODO check in a future review
             aux1: meta.advice_column_in(SecondPhase),
             aux2: meta.advice_column_in(SecondPhase),
+            is_state: meta.advice_column(),
         }
     }
     fn assign<F: Field>(
@@ -550,6 +555,7 @@ impl RwTable {
             (self.value_prev, row.value_prev),
             (self.aux1, row.aux1),
             (self.aux2, row.aux2),
+            (self.is_state, row.is_state),
         ] {
             region.assign_advice(|| "assign rw row on rw table", column, offset, || value)?;
         }
@@ -1525,14 +1531,14 @@ impl<F: Field> LookupTable<F> for ExpTable {
 /// Keep the sequence consistent with OpcodeId for scalar
 #[derive(Clone, Copy, Debug)]
 pub enum InitStateFieldTag {
+    /// Storage field, field_tag is zero for AccountStorage
+    Storage = 0,
     /// Nonce field
     Nonce = 1,
     /// Balance field
-    Balance,
+    Balance = 2,
     /// CodeHash field
-    CodeHash,
-    /// Storage field
-    Storage,
+    CodeHash = 3,
 }
 impl_expr!(InitStateFieldTag);
 
@@ -1583,6 +1589,7 @@ impl InitStateTable {
                 }
                 offset += 1;
 
+                // TODO remove duplicates
                 let account_rws = rws.0.get(&RwTableTag::Account).unwrap();
                 for rw in account_rws.iter() {
                     let address: F = rw.address().unwrap().to_scalar().unwrap();
@@ -1622,6 +1629,7 @@ impl InitStateTable {
                     offset += 1;
                 }
 
+                // TODO remove duplicates
                 let storage_rws = rws.0.get(&RwTableTag::AccountStorage).unwrap();
                 for rw in storage_rws.iter() {
                     let address: F = rw.address().unwrap().to_scalar().unwrap();

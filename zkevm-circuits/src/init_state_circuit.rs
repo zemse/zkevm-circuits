@@ -6,7 +6,8 @@ use crate::{
     witness::RwMap,
 };
 use eth_types::Field;
-use halo2_proofs::plonk::Circuit;
+use gadgets::util::Expr;
+use halo2_proofs::{plonk::Circuit, poly::Rotation};
 
 use std::{env::set_var, marker::PhantomData};
 
@@ -48,13 +49,32 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             rw_table,
         }: Self::ConfigArgs,
     ) -> Self {
+        // All Account and AccountStorage entries in RW table should exist in InitState table.
+        meta.lookup_any("exhaustive init state", |meta| {
+            // RW table
+            let s = meta.query_advice(rw_table.is_state, Rotation::cur());
+            let address_rw = meta.query_advice(rw_table.address, Rotation::cur());
+            let field_tag_rw = meta.query_advice(rw_table.field_tag, Rotation::cur());
+            let storage_key_rw = meta.query_advice(rw_table.storage_key, Rotation::cur());
+            let value_rw = meta.query_advice(rw_table.value, Rotation::cur());
+
+            // InitState table
+            let address_is = meta.query_advice(init_state_table.address, Rotation::cur());
+            let field_tag_is = meta.query_advice(init_state_table.field_tag, Rotation::cur());
+            let storage_key_is = meta.query_advice(init_state_table.storage_key, Rotation::cur());
+            let value_is = meta.query_advice(init_state_table.value, Rotation::cur());
+
+            vec![
+                (s.expr() * address_rw, address_is),
+                (s.expr() * field_tag_rw, field_tag_is),
+                (s.expr() * storage_key_rw, storage_key_is),
+                (s * value_rw, value_is),
+            ]
+        });
+
         // TODO constraints to ensure init state table is correct as per state root in
         // block table. Basically this is MPT proof verification, need to use
         // axiom here.
-
-        // Also ensure that all storage reads in RW table exist somewhere in IS table.
-        // This can be a lookup, might need to add a column RW table.
-        // This does not involve Axiom.
 
         // Circuit
         // EthCircuitBuilder::<F>::configure(meta);
