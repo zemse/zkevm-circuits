@@ -7,7 +7,7 @@ use crate::{
 };
 use eth_types::Field;
 use gadgets::util::Expr;
-use halo2_proofs::{plonk::Circuit, poly::Rotation};
+use halo2_proofs::poly::Rotation;
 
 use std::{env::set_var, marker::PhantomData};
 
@@ -15,7 +15,7 @@ use axiom_eth::{
     rlp::builder::{FnSynthesize, RlcThreadBreakPoints, RlcThreadBuilder},
     storage::{EthBlockStorageCircuitGeneric, EthBlockStorageInput},
     util::EthConfigParams,
-    EthCircuitBuilder, EthConfig, EthPreCircuit,
+    EthConfig,
 };
 
 /// Config for InitStateCircuit
@@ -172,22 +172,41 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
                 rlc: vec![524227],
             }),
         );
-        axiom_eth_circuit_builder
-            .synthesize(
-                config.axiom_eth_config.clone(),
-                layouter.namespace(|| "axiom"),
-            )
-            .unwrap();
 
-        // println!(
-        //     "axiom_eth_circuit_builder.assigned_instances {:#?}",
-        //     axiom_eth_circuit_builder.assigned_instances
-        // );
+        let witness_gen_only = axiom_eth_circuit_builder
+            .circuit
+            .builder
+            .borrow()
+            .witness_gen_only();
+
+        let assigned_advices = axiom_eth_circuit_builder
+            .circuit
+            .two_phase_synthesize(&config.axiom_eth_config.mpt, layouter);
+
+        // println!("assigned_advices {:?}", assigned_advices);
+        if !witness_gen_only {
+            // expose public instances
+            // let mut layouter = layouter.namespace(|| "expose");
+            for (i, instance) in axiom_eth_circuit_builder
+                .assigned_instances
+                .iter()
+                .enumerate()
+            {
+                let cell = instance.cell.unwrap();
+                let (cell, _) = assigned_advices
+                    .get(&(cell.context_id, cell.offset))
+                    .expect("instance not assigned");
+                // error: Equality constraint not satisfied by cell (Column('Instance', 0 - ),
+                // outside any region, on row 0)
+                //
+                // config.axiom_eth_config.instance, i)?;
+            }
+        }
 
         Ok(())
     }
 
-    fn min_num_rows_block(block: &crate::witness::Block<F>) -> (usize, usize) {
+    fn min_num_rows_block(_block: &crate::witness::Block<F>) -> (usize, usize) {
         // TODO
         (0, 10)
     }
