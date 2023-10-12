@@ -559,14 +559,14 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
             // rw table
             let call_id = meta.query_advice(rw_table.id, Rotation::cur());
             let mem_address = meta.query_advice(rw_table.address, Rotation::cur());
-            let byte = meta.query_advice(rw_table.value, Rotation::cur());
+            let mem_byte = meta.query_advice(rw_table.value, Rotation::cur());
             let is_write = meta.query_advice(rw_table.is_write, Rotation::cur());
 
             // tx table
             let q_is_returndata = meta.query_selector(q_tx_returndata);
             let tx_returndata_offset = meta.query_advice(tx_returndata_offset, Rotation::cur());
             let tx_tag_index = meta.query_advice(tx_table.index, Rotation::cur());
-            let tx_value = meta.query_advice(tx_table.value, Rotation::cur());
+            let tx_returndata_byte = meta.query_advice(tx_table.value, Rotation::cur());
             let is_tx_id_nonzero = not::expr(tx_id_is_zero_config.expr());
 
             // ON for just the non-empty returndata rows.
@@ -580,8 +580,8 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
                     condition.expr() * (tx_returndata_offset + tx_tag_index),
                     mem_address,
                 ),
-                // byte should match with the witness in tx return data
-                (condition.expr() * tx_value, byte),
+                // mem_byte should match with the witness in tx return data
+                (condition.expr() * tx_returndata_byte, mem_byte),
                 // should be a write
                 (condition.expr() * 1.expr(), is_write),
             ]
