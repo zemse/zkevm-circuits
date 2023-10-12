@@ -199,22 +199,13 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
                 .iter()
                 .enumerate()
             {
-                // self.init_state_instance.push(instance.value.evaluate());
-
-                println!("{:?}", instance);
+                println!("{:?}", instance); // removing this println somehow causes this code to not run. weird.
                 let cell = instance.cell.unwrap();
-                println!("{:?}", cell);
                 let val = assigned_advices.get(&(cell.context_id, cell.offset));
-                // .expect("instance not assigned");
                 if let Some((cell, _)) = val {
-                    println!("{:?}", cell);
+                    // println!("{:?}", cell);
                     layouter.constrain_instance(*cell, config.instance, i)?;
                 }
-
-                // error: Equality constraint not satisfied by cell (Column('Instance', 0 - ),
-                // outside any region, on row 0)
-                //
-                // config.axiom_eth_config.instance, i)?;
             }
         }
 
@@ -249,7 +240,7 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
             instance.push(value.1);
         }
 
-        println!("generated instance: {:?}", instance);
+        // println!("generated instance: {:?}", instance);
 
         vec![instance]
     }
