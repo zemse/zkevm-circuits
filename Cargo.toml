@@ -20,8 +20,8 @@ halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2.gi
 # halo2-base = { path = "../halo2-lib/halo2-base" }
 # halo2-ecc = { path = "../halo2-lib/halo2-ecc" }
 
-[patch."https://github.com/zemse/axiom-eth"]
-axiom-eth = { path = "../axiom-eth/axiom-eth", default-features = false, features = ["halo2-pse", "aggregation", "evm"] }
+# [patch."https://github.com/zemse/axiom-eth"]
+# axiom-eth = { path = "../axiom-eth/axiom-eth", default-features = false, features = ["halo2-pse", "aggregation", "evm"] }
 
 # Definition of benchmarks profile to use.
 [profile.bench]

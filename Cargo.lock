@@ -93,6 +93,7 @@ dependencies = [
 [[package]]
 name = "any_circuit_derive"
 version = "0.1.0"
+source = "git+https://github.com/zemse/axiom-eth?rev=6bc3fe94#6bc3fe94c302757441a5013cc4171a8970a583d2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -197,6 +198,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "axiom-eth"
 version = "0.2.1"
+source = "git+https://github.com/zemse/axiom-eth?rev=6bc3fe94#6bc3fe94c302757441a5013cc4171a8970a583d2"
 dependencies = [
  "any_circuit_derive",
  "base64 0.21.0",
