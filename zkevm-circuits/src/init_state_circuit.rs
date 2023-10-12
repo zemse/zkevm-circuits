@@ -1,13 +1,17 @@
 //! Init State Circuit
 
 use crate::{
+    evm_circuit::util::from_bytes,
     table::{BlockTable, InitStateTable, RwTable},
     util::{SubCircuit, SubCircuitConfig},
     witness::RwMap,
 };
-use eth_types::Field;
+use eth_types::{BigEndianHash, Field, ToScalar, U256};
 use gadgets::util::Expr;
-use halo2_proofs::poly::Rotation;
+use halo2_proofs::{
+    plonk::{Column, Instance},
+    poly::Rotation,
+};
 
 use std::{env::set_var, marker::PhantomData};
 
@@ -25,6 +29,7 @@ pub struct InitStateCircuitConfig<F: Field> {
     init_state_table: InitStateTable,
     rw_table: RwTable,
     axiom_eth_config: EthConfig<F>,
+    instance: Column<Instance>,
     _marker: PhantomData<F>,
 }
 
@@ -49,6 +54,9 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             rw_table,
         }: Self::ConfigArgs,
     ) -> Self {
+        let instance = meta.instance_column();
+        meta.enable_equality(instance);
+
         // All Account and AccountStorage entries in RW table should exist in InitState table.
         meta.lookup_any("exhaustive init state", |meta| {
             // RW table
@@ -90,6 +98,7 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             unusable_rows: 77,
             keccak_rows_per_round: 25,
             lookup_bits: Some(8),
+            skip_instance: true,
         };
 
         set_var(
@@ -108,6 +117,7 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             init_state_table,
             rw_table,
             axiom_eth_config: EthConfig::configure(meta, eth_config_params),
+            instance,
             _marker: PhantomData,
         }
     }
@@ -183,19 +193,24 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
             .circuit
             .two_phase_synthesize(&config.axiom_eth_config.mpt, layouter);
 
-        // println!("assigned_advices {:?}", assigned_advices);
         if !witness_gen_only {
-            // expose public instances
-            // let mut layouter = layouter.namespace(|| "expose");
             for (i, instance) in axiom_eth_circuit_builder
                 .assigned_instances
                 .iter()
                 .enumerate()
             {
+                // self.init_state_instance.push(instance.value.evaluate());
+
+                println!("{:?}", instance);
                 let cell = instance.cell.unwrap();
-                let (cell, _) = assigned_advices
-                    .get(&(cell.context_id, cell.offset))
-                    .expect("instance not assigned");
+                println!("{:?}", cell);
+                let val = assigned_advices.get(&(cell.context_id, cell.offset));
+                // .expect("instance not assigned");
+                if let Some((cell, _)) = val {
+                    println!("{:?}", cell);
+                    layouter.constrain_instance(*cell, config.instance, i)?;
+                }
+
                 // error: Equality constraint not satisfied by cell (Column('Instance', 0 - ),
                 // outside any region, on row 0)
                 //
@@ -212,7 +227,39 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
     }
 
     fn instance(&self) -> Vec<Vec<F>> {
-        vec![vec![]] // TODO remove this instance
-                     // vec![] // TODO remove this instance
+        let mut instance: Vec<F> = vec![];
+
+        let block_hash = hi_lo(&self.axiom_inputs.block_hash.into_uint());
+        instance.push(block_hash.0);
+        instance.push(block_hash.1);
+
+        let block_number = F::from(self.axiom_inputs.block_number as u64);
+        instance.push(block_number);
+
+        let address = self.axiom_inputs.storage.addr.to_scalar().unwrap();
+        instance.push(address);
+
+        for (key, value, _) in self.axiom_inputs.storage.storage_pfs.iter() {
+            let key = hi_lo(&key.into_uint());
+            instance.push(key.0);
+            instance.push(key.1);
+
+            let value = hi_lo(value);
+            instance.push(value.0);
+            instance.push(value.1);
+        }
+
+        println!("generated instance: {:?}", instance);
+
+        vec![instance]
     }
+}
+
+fn hi_lo<F: Field>(value: &U256) -> (F, F) {
+    let mut bytes: [u8; 32] = [0u8; 32];
+    value.to_little_endian(&mut bytes);
+    (
+        from_bytes::value(&bytes[16..]),
+        from_bytes::value(&bytes[..16]),
+    )
 }

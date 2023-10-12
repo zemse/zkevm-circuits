@@ -58,7 +58,7 @@ fn get_call_result(trace: &[GethExecStep]) -> Option<Word> {
 }
 
 /// State and Code Access set.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct AccessSet {
     /// Set of accounts
     pub state: HashMap<Address, HashSet<Word>>,
