@@ -221,7 +221,6 @@
 // better way to handle downcasting from Operation into it's variants.
 #![allow(clippy::upper_case_acronyms)] // Too pedantic
 #![feature(type_changing_struct_update)]
-#![feature(slice_pattern)]
 
 /// Address for challenge contract for Proof of Exploit
 /// 0xFEEDC0DE00000000000000000000000000000000

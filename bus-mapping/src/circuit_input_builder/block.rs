@@ -5,9 +5,25 @@ use crate::{
     operation::{OperationContainer, RWCounter},
     Error,
 };
-use core::slice::SlicePattern;
-use eth_types::{evm_unimplemented, keccak256, Address, Bytes, Word};
+use eth_types::{evm_unimplemented, Address, Bytes, Word};
 use std::collections::HashMap;
+
+/// Proof of Exploit inputs
+#[derive(Debug, Default)]
+pub struct PoxInputs {
+    /// Hash of the challenge bytecode
+    pub challenge_codehash: Word,
+    /// Challenge bytecode
+    pub challenge_bytecode: Bytes,
+    /// Hash of the exploit bytecode
+    pub exploit_codehash: Word,
+    /// Exploit bytecode
+    pub exploit_bytecode: Bytes,
+    /// New balance of the exploit account
+    pub exploit_balance: Word,
+    /// Old balance of the exploit account
+    pub exploit_balance_before: Word,
+}
 
 /// Context of a [`Block`] which can mutate in a [`Transaction`].
 #[derive(Debug, Clone)]
@@ -87,16 +103,8 @@ pub struct Block {
     pub exp_events: Vec<ExpEvent>,
     /// Original block from geth
     pub eth_block: eth_types::Block<eth_types::Transaction>,
-    /// POX challenge bytecode hash
-    pub pox_challenge_codehash: Word,
-    /// POX challenge bytecode
-    pub pox_challenge_bytecode: Bytes,
-    /// POX exploit bytecode hash
-    pub pox_exploit_codehash: Word,
-    /// POX exploit bytecode
-    pub pox_exploit_bytecode: Bytes,
-    /// POX exploit balance
-    pub pox_exploit_balance: Word,
+    /// Inputs for Proof of Exploit
+    pub pox_inputs: PoxInputs,
 }
 
 impl Block {
@@ -106,9 +114,7 @@ impl Block {
         history_hashes: Vec<Word>,
         prev_state_root: Word,
         eth_block: &eth_types::Block<eth_types::Transaction>,
-        pox_challenge_bytecode: Bytes,
-        pox_exploit_bytecode: Bytes,
-        pox_exploit_balance: Word,
+        pox_inputs: PoxInputs,
     ) -> Result<Self, Error> {
         if eth_block.base_fee_per_gas.is_none() {
             // FIXME: resolve this once we have proper EIP-1559 support
@@ -149,11 +155,7 @@ impl Block {
             exp_events: Vec::new(),
             sha3_inputs: Vec::new(),
             eth_block: eth_block.clone(),
-            pox_challenge_codehash: keccak256(pox_challenge_bytecode.as_slice()).into(),
-            pox_challenge_bytecode,
-            pox_exploit_codehash: keccak256(pox_exploit_bytecode.as_slice()).into(),
-            pox_exploit_bytecode,
-            pox_exploit_balance,
+            pox_inputs,
         })
     }
 

@@ -3,11 +3,11 @@
 use crate::{
     circuit_input_builder::{
         get_state_accesses, Block, CircuitInputBuilder, CircuitsParams, DynamicCParams,
-        FixedCParams,
+        FixedCParams, PoxInputs,
     },
     state_db::{self, CodeDB, StateDB},
 };
-use eth_types::{geth_types::GethData, Bytes, Word};
+use eth_types::{geth_types::GethData, Word};
 
 /// BlockData is a type that contains all the information from a block required
 /// to build the circuit inputs.
@@ -42,9 +42,7 @@ impl<C: CircuitsParams> BlockData<C> {
                 self.history_hashes.clone(),
                 Word::default(),
                 &self.eth_block,
-                Bytes::default(),
-                Bytes::default(),
-                Word::default(),
+                PoxInputs::default(),
             )
             .unwrap(),
             self.circuits_params,

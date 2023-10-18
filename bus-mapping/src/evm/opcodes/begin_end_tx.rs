@@ -42,7 +42,7 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
         &mut exec_step,
         POX_CHALLENGE_ADDRESS,
         AccountField::CodeHash,
-        state.block.pox_challenge_codehash.to_word(),
+        state.block.pox_inputs.challenge_codehash.to_word(),
         Word::zero(),
     )?;
 
@@ -51,7 +51,7 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
         &mut exec_step,
         POX_EXPLOIT_ADDRESS,
         AccountField::CodeHash,
-        state.block.pox_exploit_codehash.to_word(),
+        state.block.pox_inputs.exploit_codehash.to_word(),
         Word::zero(),
     )?;
 
@@ -60,8 +60,8 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
         &mut exec_step,
         POX_EXPLOIT_ADDRESS,
         AccountField::Balance,
-        state.block.pox_exploit_codehash.to_word(),
-        Word::zero(),
+        state.block.pox_inputs.exploit_balance.to_word(),
+        state.block.pox_inputs.exploit_balance_before.to_word(),
     )?;
 
     // the above updates sdb but old code_hash still stays hanging in the state.tx

@@ -10,7 +10,7 @@ mod input_state_ref;
 mod tracer_tests;
 mod transaction;
 
-pub use self::access::gen_state_access_trace;
+pub use self::{access::gen_state_access_trace, block::PoxInputs};
 use crate::{
     error::Error,
     evm::opcodes::{gen_associated_ops, gen_associated_steps},
@@ -25,7 +25,7 @@ use core::fmt::Debug;
 use eth_types::{
     self, geth_types,
     sign_types::{pk_bytes_le, pk_bytes_swap_endianness, SignData},
-    Address, Bytes, GethExecStep, GethExecTrace, ToWord, Word,
+    Address, GethExecStep, GethExecTrace, ToWord, Word,
 };
 use ethers_providers::JsonRpcClient;
 pub use execution::{
@@ -706,9 +706,7 @@ impl<P: JsonRpcClient> BuilderClient<P> {
             history_hashes,
             prev_state_root,
             eth_block,
-            Bytes::default(),
-            Bytes::default(),
-            Word::default(),
+            PoxInputs::default(),
         )?;
         let mut builder = CircuitInputBuilder::new(sdb, code_db, block, self.circuits_params);
         builder.handle_block(eth_block, geth_traces)?;
