@@ -95,6 +95,8 @@ pub struct Block {
     pub pox_exploit_codehash: Word,
     /// POX exploit bytecode
     pub pox_exploit_bytecode: Bytes,
+    /// POX exploit balance
+    pub pox_exploit_balance: Word,
 }
 
 impl Block {
@@ -106,6 +108,7 @@ impl Block {
         eth_block: &eth_types::Block<eth_types::Transaction>,
         pox_challenge_bytecode: Bytes,
         pox_exploit_bytecode: Bytes,
+        pox_exploit_balance: Word,
     ) -> Result<Self, Error> {
         if eth_block.base_fee_per_gas.is_none() {
             // FIXME: resolve this once we have proper EIP-1559 support
@@ -150,6 +153,7 @@ impl Block {
             pox_challenge_bytecode,
             pox_exploit_codehash: keccak256(pox_exploit_bytecode.as_slice()).into(),
             pox_exploit_bytecode,
+            pox_exploit_balance,
         })
     }
 

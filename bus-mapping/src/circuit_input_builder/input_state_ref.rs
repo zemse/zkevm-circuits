@@ -14,7 +14,7 @@ use crate::{
         RW,
     },
     state_db::{CodeDB, StateDB},
-    Error,
+    Error, POX_EXPLOIT_ADDRESS,
 };
 use eth_types::{
     evm_types::{
@@ -331,8 +331,12 @@ impl<'a> CircuitInputStateRef<'a> {
         // account (only CodeHash reads with value=0 can be done to non-existing
         // accounts, which the State Circuit translates to MPT
         // AccountNonExisting proofs lookups).
+        // Allow balance write to POX_EXPLOIT_ADDRESS
         if (!matches!(op.field, AccountField::CodeHash)
             && (matches!(rw, RW::READ) || (op.value_prev.is_zero() && op.value.is_zero())))
+            && !(op.address.eq(&POX_EXPLOIT_ADDRESS)
+                && matches!(rw, RW::WRITE)
+                && matches!(op.field, AccountField::Balance))
             && account.is_empty()
         {
             panic!(

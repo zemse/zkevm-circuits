@@ -708,6 +708,7 @@ impl<P: JsonRpcClient> BuilderClient<P> {
             eth_block,
             Bytes::default(),
             Bytes::default(),
+            Word::default(),
         )?;
         let mut builder = CircuitInputBuilder::new(sdb, code_db, block, self.circuits_params);
         builder.handle_block(eth_block, geth_traces)?;

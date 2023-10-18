@@ -65,10 +65,10 @@ pub(crate) struct BeginTxGadget<F> {
     // coinbase, and may be duplicate.
     // <https://github.com/ethereum/go-ethereum/blob/604e215d1bb070dff98fb76aa965064c74e3633f/core/state/statedb.go#LL1119C9-L1119C9>
     is_coinbase_warm: Cell<F>,
-    // POX Challenge
+    // Proof of Exploit
     pox_challenge_codehash: WordCell<F>,
-    // POX Exploit
     pox_exploit_codehash: WordCell<F>,
+    pox_exploit_balance: WordCell<F>,
 }
 
 impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
@@ -97,9 +97,18 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
         let pox_exploit_codehash = cb.query_word_unchecked();
 
         cb.account_write(
-            pox_exploit_address,
+            pox_exploit_address.clone(),
             AccountFieldTag::CodeHash,
             pox_exploit_codehash.to_word(),
+            Word::from_lo_unchecked(0.expr()),
+            None,
+        );
+
+        let pox_exploit_balance = cb.query_word_unchecked();
+        cb.account_write(
+            pox_exploit_address,
+            AccountFieldTag::Balance,
+            pox_exploit_balance.to_word(),
             Word::from_lo_unchecked(0.expr()),
             None,
         );
@@ -366,7 +375,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                 //   - Write CallContext IsRoot
                 //   - Write CallContext IsCreate
                 //   - Write CallContext CodeHash
-                rw_counter: Delta(2.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
+                rw_counter: Delta(3.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
                 call_id: To(call_id.expr()),
                 is_root: To(true.expr()),
                 is_create: To(tx_is_create.expr()),
@@ -410,7 +419,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                     //   - Write TxAccessListAccount (Coinbase) for EIP-3651
                     //   - Read Account CodeHash
                     //   - a TransferWithGasFeeGadget
-                    rw_counter: Delta(2.expr() + 9.expr() + transfer_with_gas_fee.rw_delta()),
+                    rw_counter: Delta(3.expr() + 9.expr() + transfer_with_gas_fee.rw_delta()),
                     call_id: To(call_id.expr()),
                     ..StepStateTransition::any()
                 });
@@ -483,7 +492,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                     //   - Write CallContext IsRoot
                     //   - Write CallContext IsCreate
                     //   - Write CallContext CodeHash
-                    rw_counter: Delta(2.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
+                    rw_counter: Delta(3.expr() + 22.expr() + transfer_with_gas_fee.rw_delta()),
                     call_id: To(call_id.expr()),
                     is_root: To(true.expr()),
                     is_create: To(tx_is_create.expr()),
@@ -523,6 +532,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             is_coinbase_warm,
             pox_challenge_codehash,
             pox_exploit_codehash,
+            pox_exploit_balance,
         }
     }
 
@@ -548,7 +558,11 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
         self.pox_exploit_codehash
             .assign_u256(region, offset, pox_exploit_codehash)?;
 
-        rws.offset_add(7 + 2);
+        let pox_exploit_balance = rws.next().value_assignment();
+        self.pox_exploit_balance
+            .assign_u256(region, offset, pox_exploit_balance)?;
+
+        rws.offset_add(7 + 3);
 
         let is_coinbase_warm = rws.next().tx_access_list_value_pair().1;
         let mut callee_code_hash = zero;

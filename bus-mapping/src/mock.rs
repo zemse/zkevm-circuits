@@ -44,6 +44,7 @@ impl<C: CircuitsParams> BlockData<C> {
                 &self.eth_block,
                 Bytes::default(),
                 Bytes::default(),
+                Word::default(),
             )
             .unwrap(),
             self.circuits_params,

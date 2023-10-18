@@ -37,7 +37,7 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
         return Err(Error::AccountNotFound(POX_CHALLENGE_ADDRESS));
     }
 
-    // update pox challenge account with bytecode
+    // update pox challenge account bytecode
     state.account_write(
         &mut exec_step,
         POX_CHALLENGE_ADDRESS,
@@ -46,11 +46,20 @@ fn gen_begin_tx_steps(state: &mut CircuitInputStateRef) -> Result<ExecStep, Erro
         Word::zero(),
     )?;
 
-    // update pox exploit account with bytecode
+    // update pox exploit account bytecode
     state.account_write(
         &mut exec_step,
         POX_EXPLOIT_ADDRESS,
         AccountField::CodeHash,
+        state.block.pox_exploit_codehash.to_word(),
+        Word::zero(),
+    )?;
+
+    // update pox exploit account balance
+    state.account_write(
+        &mut exec_step,
+        POX_EXPLOIT_ADDRESS,
+        AccountField::Balance,
         state.block.pox_exploit_codehash.to_word(),
         Word::zero(),
     )?;
