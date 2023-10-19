@@ -96,13 +96,18 @@ mod tests {
         // Bench setup generation
         let setup_message = format!("{} {} with degree = {}", BENCHMARK_ID, setup_prfx, degree);
         let start1 = start_timer!(|| setup_message);
+        println!("setup");
         let general_params = ParamsKZG::<Bn256>::setup(degree, &mut rng);
+        println!("setup2");
         let verifier_params: ParamsVerifierKZG<Bn256> = general_params.verifier_params().clone();
         end_timer!(start1);
 
         // Initialize the proving key
+        println!("keygen_vk");
         let vk = keygen_vk(&general_params, &circuit).expect("keygen_vk should not fail");
+        println!("keygen_pk");
         let pk = keygen_pk(&general_params, vk, &circuit).expect("keygen_pk should not fail");
+        println!("done");
         // Create a proof
         let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
 
@@ -112,6 +117,7 @@ mod tests {
             BENCHMARK_ID, proof_gen_prfx, degree
         );
         let start2 = start_timer!(|| proof_message);
+        println!("proving");
         create_proof::<
             KZGCommitmentScheme<Bn256>,
             ProverSHPLONK<'_, Bn256>,
@@ -128,6 +134,7 @@ mod tests {
             &mut transcript,
         )
         .expect("proof generation should not fail");
+        println!("proving done");
         let proof = transcript.finalize();
         end_timer!(start2);
 
@@ -135,7 +142,7 @@ mod tests {
         let start3 = start_timer!(|| format!("{} {}", BENCHMARK_ID, proof_ver_prfx));
         let mut verifier_transcript = Blake2bRead::<_, G1Affine, Challenge255<_>>::init(&proof[..]);
         let strategy = SingleStrategy::new(&general_params);
-
+        println!("verifying");
         verify_proof::<
             KZGCommitmentScheme<Bn256>,
             VerifierSHPLONK<'_, Bn256>,
@@ -150,6 +157,7 @@ mod tests {
             &mut verifier_transcript,
         )
         .expect("failed to verify bench circuit");
+        println!("verifying done");
         end_timer!(start3);
     }
 }
