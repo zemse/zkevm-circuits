@@ -78,16 +78,16 @@ mod tests {
         .into();
 
         block.sign(&wallets);
-
+        println!("building");
         let circuits_params = FixedCParams {
             max_txs: 1,
-            max_calldata: 32,
-            max_rws: 256,
-            max_copy_rows: 256,
-            max_exp_steps: 256,
+            max_calldata: 256,
+            max_rws: 1000,
+            max_copy_rows: 1000,
+            max_exp_steps: 1000,
             max_bytecode: 512,
-            max_evm_rows: 0,
-            max_keccak_rows: 0,
+            max_evm_rows: 1000,
+            max_keccak_rows: 50000,
         };
         let (_, circuit, instance, _) =
             SuperCircuit::build(block, circuits_params, Fr::from(0x100)).unwrap();
