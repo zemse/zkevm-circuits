@@ -4,11 +4,11 @@
 mod tests {
     use ark_std::{end_timer, start_timer};
     use bus_mapping::circuit_input_builder::FixedCParams;
-    use eth_types::{address, bytecode, geth_types::GethData, Word};
+    use eth_types::{address, bytecode, geth_types::GethData, keccak256, Word};
     use ethers_signers::{LocalWallet, Signer};
     use halo2_proofs::{
         halo2curves::bn256::{Bn256, Fr, G1Affine},
-        plonk::{create_proof, keygen_pk, keygen_vk, verify_proof},
+        plonk::{create_proof, keygen_pk, keygen_vk, verify_proof, Circuit, VerifyingKey},
         poly::{
             commitment::ParamsProver,
             kzg::{
@@ -20,11 +20,12 @@ mod tests {
         transcript::{
             Blake2bRead, Blake2bWrite, Challenge255, TranscriptReadBuffer, TranscriptWriterBuffer,
         },
+        SerdeFormat,
     };
     use mock::{TestContext, MOCK_CHAIN_ID};
     use rand::SeedableRng;
     use rand_chacha::ChaChaRng;
-    use std::{collections::HashMap, env::var};
+    use std::{collections::HashMap, env::var, fs::File, path::PathBuf, str::FromStr};
     use zkevm_circuits::super_circuit::SuperCircuit;
 
     #[cfg_attr(not(feature = "benches"), ignore)]
@@ -128,7 +129,7 @@ mod tests {
         >(
             &general_params,
             &pk,
-            &[circuit],
+            &[circuit.clone()],
             &[&instance_refs],
             rng,
             &mut transcript,
@@ -140,6 +141,7 @@ mod tests {
 
         // Bench verification time
         let start3 = start_timer!(|| format!("{} {}", BENCHMARK_ID, proof_ver_prfx));
+        let vk = pk.get_vk();
         let mut verifier_transcript = Blake2bRead::<_, G1Affine, Challenge255<_>>::init(&proof[..]);
         let strategy = SingleStrategy::new(&general_params);
         println!("verifying");
@@ -151,7 +153,7 @@ mod tests {
             SingleStrategy<'_, Bn256>,
         >(
             &verifier_params,
-            pk.get_vk(),
+            vk,
             strategy,
             &[&instance_refs],
             &mut verifier_transcript,
@@ -159,5 +161,40 @@ mod tests {
         .expect("failed to verify bench circuit");
         println!("verifying done");
         end_timer!(start3);
+
+        // Extra verification
+        let start4 = start_timer!(|| format!("extra verification"));
+        println!("vk before {:?}", keccak256(format!("{:?}", vk).as_bytes()));
+        let vk_path = PathBuf::from_str("./vk").unwrap();
+        let mut file = File::create(&vk_path).unwrap();
+        vk.write(&mut file, SerdeFormat::RawBytes).unwrap();
+        let mut file = File::open(&vk_path).unwrap();
+        let vk = VerifyingKey::<G1Affine>::read::<File, SuperCircuit<Fr>>(
+            &mut file,
+            SerdeFormat::RawBytes,
+            circuit.params(),
+        )
+        .unwrap();
+        println!("vk after {:?}", keccak256(format!("{:?}", vk).as_bytes()));
+
+        let mut verifier_transcript = Blake2bRead::<_, G1Affine, Challenge255<_>>::init(&proof[..]);
+        let strategy = SingleStrategy::new(&general_params);
+        println!("verifying");
+        verify_proof::<
+            KZGCommitmentScheme<Bn256>,
+            VerifierSHPLONK<'_, Bn256>,
+            Challenge255<G1Affine>,
+            Blake2bRead<&[u8], G1Affine, Challenge255<G1Affine>>,
+            SingleStrategy<'_, Bn256>,
+        >(
+            &verifier_params,
+            &vk,
+            strategy,
+            &[&instance_refs],
+            &mut verifier_transcript,
+        )
+        .expect("failed to verify bench circuit");
+        println!("verifying done");
+        end_timer!(start4);
     }
 }
