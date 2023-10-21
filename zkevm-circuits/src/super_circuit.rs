@@ -380,9 +380,12 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
 /// Super Circuit configuration parameters
 #[derive(Default)]
 pub struct SuperCircuitParams<F: Field> {
-    max_txs: usize,
-    max_calldata: usize,
-    mock_randomness: F,
+    /// Max txs
+    pub max_txs: usize,
+    /// Max calldata
+    pub max_calldata: usize,
+    /// Mock randomness
+    pub mock_randomness: F,
 }
 
 impl<F: Field> Circuit<F> for SuperCircuit<F> {
