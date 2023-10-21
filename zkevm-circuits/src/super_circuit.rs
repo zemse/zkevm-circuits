@@ -378,7 +378,7 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
 }
 
 /// Super Circuit configuration parameters
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SuperCircuitParams<F: Field> {
     /// Max txs
     pub max_txs: usize,
@@ -486,9 +486,12 @@ impl<F: Field> SuperCircuit<F> {
         let k = log2_ceil(Self::unusable_rows() + rows_needed);
         log::debug!("super circuit uses k = {}", k);
 
+        // we can compare between two blocks
+        println!("witness block zkevm bench: {:#?}", block);
         let circuit = SuperCircuit::new_from_block(&block);
 
         let instance = circuit.instance();
+        println!("instance zkevm bench: {:#?}", instance);
         Ok((k, circuit, instance))
     }
 }
