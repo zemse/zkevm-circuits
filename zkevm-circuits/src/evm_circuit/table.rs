@@ -252,6 +252,8 @@ pub(crate) enum Lookup<F> {
         counter: Expression<F>,
         /// A boolean value to specify if the access record is a read or write.
         is_write: Expression<F>,
+        /// A boolean value to specify if the access record is a call address.
+        is_call_address: Expression<F>,
         /// Tag to specify which read-write data to access, see RwTableTag for
         /// all tags.
         tag: Expression<F>,
@@ -373,11 +375,13 @@ impl<F: Field> Lookup<F> {
             Self::Rw {
                 counter,
                 is_write,
+                is_call_address,
                 tag,
                 values,
             } => vec![
                 counter.clone(),
                 is_write.clone(),
+                is_call_address.clone(),
                 tag.clone(),
                 values.id.clone(),
                 values.address.clone(),

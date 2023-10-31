@@ -744,6 +744,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         name: &str,
         counter: Expression<F>,
         is_write: Expression<F>,
+        is_call_address: Expression<F>,
         tag: Target,
         values: RwValues<F>,
     ) {
@@ -753,6 +754,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
             Lookup::Rw {
                 counter,
                 is_write,
+                is_call_address,
                 tag: tag.expr(),
                 values,
             },
@@ -765,6 +767,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         &mut self,
         name: &'static str,
         is_write: Expression<F>,
+        is_call_address: Expression<F>,
         tag: Target,
         values: RwValues<F>,
     ) {
@@ -772,6 +775,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
             name,
             self.curr.state.rw_counter.expr() + self.rw_counter_offset.clone(),
             is_write,
+            is_call_address,
             tag,
             values,
         );
@@ -802,7 +806,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
             "Reversible write requires reversible tag"
         );
 
-        self.rw_lookup(name, true.expr(), tag, values.clone());
+        self.rw_lookup(name, true.expr(), false.expr(), tag, values.clone());
 
         // Revert if is_persistent is 0
         if let Some(reversion_info) = reversion_info {
@@ -813,6 +817,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
                     &name,
                     reversion_info.rw_counter_of_reversion(reversible_write_counter_inc_selector),
                     true.expr(),
+                    false.expr(),
                     tag,
                     values.revert_value(),
                 )
@@ -853,6 +858,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
     ) {
         self.rw_lookup(
             "account access list read",
+            false.expr(),
             false.expr(),
             Target::TxAccessListAccount,
             RwValues::new(
@@ -901,6 +907,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         self.rw_lookup(
             "TxAccessListAccountStorage read",
             false.expr(),
+            false.expr(),
             Target::TxAccessListAccountStorage,
             RwValues::new(
                 tx_id,
@@ -919,6 +926,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
     pub(crate) fn tx_refund_read(&mut self, tx_id: Expression<F>, value: Word<Expression<F>>) {
         self.rw_lookup(
             "TxRefund read",
+            false.expr(),
             false.expr(),
             Target::TxRefund,
             RwValues::new(
@@ -965,6 +973,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
     ) {
         self.rw_lookup(
             "Account read",
+            false.expr(),
             false.expr(),
             Target::Account,
             RwValues::new(
@@ -1014,6 +1023,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
     ) {
         self.rw_lookup(
             "account_storage_read",
+            false.expr(),
             false.expr(),
             Target::Storage,
             RwValues::new(
@@ -1094,6 +1104,9 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         self.rw_lookup(
             "CallContext lookup",
             0.expr(),
+            (field_tag == CallContextFieldTag::CalleeAddress
+                || field_tag == CallContextFieldTag::CallerAddress)
+                .expr(),
             Target::CallContext,
             RwValues::new(
                 call_id.unwrap_or_else(|| self.curr.state.call_id.expr()),
@@ -1116,6 +1129,9 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         self.rw_lookup(
             "CallContext lookup",
             1.expr(),
+            (field_tag == CallContextFieldTag::CalleeAddress
+                || field_tag == CallContextFieldTag::CallerAddress)
+                .expr(),
             Target::CallContext,
             RwValues::new(
                 call_id.unwrap_or_else(|| self.curr.state.call_id.expr()),
@@ -1202,6 +1218,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         self.rw_lookup(
             "Stack lookup",
             is_write,
+            false.expr(),
             Target::Stack,
             RwValues::new(
                 self.curr.state.call_id.expr(),
@@ -1227,6 +1244,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         self.rw_lookup(
             "Memory lookup",
             is_write,
+            false.expr(),
             Target::Memory,
             RwValues::new(
                 call_id.unwrap_or_else(|| self.curr.state.call_id.expr()),
@@ -1252,6 +1270,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         self.rw_lookup(
             "log data lookup",
             1.expr(),
+            false.expr(),
             Target::TxLog,
             RwValues::new(
                 tx_id,
@@ -1276,6 +1295,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
         self.rw_lookup(
             "tx receipt lookup",
             is_write,
+            false.expr(),
             Target::TxReceipt,
             RwValues::new(
                 tx_id,
@@ -1297,6 +1317,7 @@ impl<'a, F: Field> EVMConstraintBuilder<'a, F> {
             "Start lookup",
             counter,
             0.expr(),
+            false.expr(),
             Target::Start,
             RwValues::new(
                 0.expr(),

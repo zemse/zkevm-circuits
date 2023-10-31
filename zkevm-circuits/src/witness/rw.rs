@@ -271,6 +271,7 @@ pub enum Rw {
 pub struct RwRow<F> {
     pub(crate) rw_counter: F,
     pub(crate) is_write: F,
+    pub(crate) is_call_address: F,
     pub(crate) tag: F,
     pub(crate) id: F,
     pub(crate) address: F,
@@ -282,10 +283,11 @@ pub struct RwRow<F> {
 }
 
 impl<F: Field> RwRow<F> {
-    pub(crate) fn values(&self) -> [F; 14] {
+    pub(crate) fn values(&self) -> [F; 15] {
         [
             self.rw_counter,
             self.is_write,
+            self.is_call_address,
             self.tag,
             self.id,
             self.address,
@@ -327,6 +329,7 @@ impl<F: Field> RwRow<Value<F>> {
         RwRow {
             rw_counter: unwrap_f(self.rw_counter),
             is_write: unwrap_f(self.is_write),
+            is_call_address: unwrap_f(self.is_call_address),
             tag: unwrap_f(self.tag),
             id: unwrap_f(self.id),
             address: unwrap_f(self.address),
@@ -430,6 +433,7 @@ impl Rw {
         RwRow {
             rw_counter: Value::known(F::from(self.rw_counter() as u64)),
             is_write: Value::known(F::from(self.is_write() as u64)),
+            is_call_address: Value::known(F::from(self.is_call_address() as u64)),
             tag: Value::known(F::from(self.tag() as u64)),
             id: Value::known(F::from(self.id().unwrap_or_default() as u64)),
             address: Value::known(self.address().unwrap_or_default().to_scalar().unwrap()),
@@ -472,6 +476,16 @@ impl Rw {
             | Self::CallContext { is_write, .. }
             | Self::TxLog { is_write, .. }
             | Self::TxReceipt { is_write, .. } => *is_write,
+        }
+    }
+
+    pub(crate) fn is_call_address(&self) -> bool {
+        match self {
+            Self::CallContext { field_tag, .. } => {
+                *field_tag == CallContextFieldTag::CalleeAddress
+                    || *field_tag == CallContextFieldTag::CallerAddress
+            }
+            _ => false,
         }
     }
 

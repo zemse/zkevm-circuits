@@ -3,7 +3,7 @@ use super::{
 };
 use crate::{
     evm_circuit::util::{math_gadget::generate_lagrange_base_polynomial, not},
-    table::{AccountFieldTag, MPTProofType},
+    table::{AccountFieldTag, CallContextFieldTag, CommonFieldTag, MPTProofType},
     util::{word, Expr},
 };
 use bus_mapping::operation::Target;
@@ -17,6 +17,7 @@ pub struct RwTableQueries<F: Field> {
     pub rw_counter: Expression<F>,
     pub prev_rw_counter: Expression<F>,
     pub is_write: Expression<F>,
+    pub is_call_address: Expression<F>,
     pub tag: Expression<F>,
     pub id: Expression<F>,
     pub prev_id: Expression<F>,
@@ -48,6 +49,7 @@ pub struct Queries<F: Field> {
     pub lexicographic_ordering_selector: Expression<F>,
     pub rw_counter: MpiQueries<F, N_LIMBS_RW_COUNTER>,
     pub tag_bits: [Expression<F>; 4],
+    pub field_tag_bits: [Expression<F>; 5],
     pub id: MpiQueries<F, N_LIMBS_ID>,
     pub is_tag_and_id_unchanged: Expression<F>,
     pub address: MpiQueries<F, N_LIMBS_ACCOUNT_ADDRESS>,
@@ -150,6 +152,8 @@ impl<F: Field> ConstraintBuilder<F> {
     fn build_general_constraints(&mut self, q: &Queries<F>) {
         // tag value in RwTableTag range is enforced in BinaryNumberChip
         self.require_boolean("is_write is boolean", q.is_write());
+
+        self.require_boolean("is_call_address is boolean", q.is_call_address());
 
         // 1 if first_different_limb is in the rw counter, 0 otherwise (i.e. any of the
         // 4 most significant bits are 0)
@@ -487,6 +491,14 @@ impl<F: Field> ConstraintBuilder<F> {
     }
 
     fn build_call_context_constraints(&mut self, q: &Queries<F>) {
+        self.condition(
+            q.fieldtag_matches(CallContextFieldTag::CalleeAddress.into()),
+            |cb| cb.require_equal("is_call_address", q.is_call_address(), true.expr()),
+        );
+        self.condition(
+            q.fieldtag_matches(CallContextFieldTag::CallerAddress.into()),
+            |cb| cb.require_equal("is_call_address", q.is_call_address(), true.expr()),
+        );
         self.require_zero("address is 0 for CallContext", q.rw_table.address.clone());
         self.require_word_zero(
             "storage_key is 0 for CallContext",
@@ -594,6 +606,10 @@ impl<F: Field> Queries<F> {
         self.rw_table.is_write.clone()
     }
 
+    fn is_call_address(&self) -> Expression<F> {
+        self.rw_table.is_call_address.clone()
+    }
+
     fn is_read(&self) -> Expression<F> {
         not::expr(self.is_write())
     }
@@ -628,6 +644,13 @@ impl<F: Field> Queries<F> {
 
     fn tag_matches(&self, tag: Target) -> Expression<F> {
         BinaryNumberConfig::<Target, 4>::value_equals_expr(tag, self.tag_bits.clone())
+    }
+
+    fn fieldtag_matches(&self, field_tag: CommonFieldTag) -> Expression<F> {
+        BinaryNumberConfig::<CommonFieldTag, 5>::value_equals_expr(
+            field_tag,
+            self.field_tag_bits.clone(),
+        )
     }
 
     fn first_access(&self) -> Expression<F> {

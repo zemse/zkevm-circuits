@@ -190,3 +190,150 @@ pub enum CallContextFieldTag {
     ReversibleWriteCounter,
 }
 impl_expr!(CallContextFieldTag);
+
+/// 5 bit field tag for all other field tags
+#[derive(Debug, Clone, PartialEq, Eq, Copy, EnumIter, Hash)]
+pub enum CommonFieldTag {
+    /// Value0
+    Value0,
+    /// Value1
+    Value1,
+    /// Value2
+    Value2,
+    /// Value3
+    Value3,
+    /// Value4
+    Value4,
+    /// Value5
+    Value5,
+    /// Value6
+    Value6,
+    /// Value7
+    Value7,
+    /// Value8
+    Value8,
+    /// Value9
+    Value9,
+    /// Value10
+    Value10,
+    /// Value11
+    Value11,
+    /// Value12
+    Value12,
+    /// Value13
+    Value13,
+    /// Value14
+    Value14,
+    /// Value15
+    Value15,
+    /// Value16
+    Value16,
+    /// Value17
+    Value17,
+    /// Value18
+    Value18,
+    /// Value19
+    Value19,
+    /// Value20
+    Value20,
+    /// Value21
+    Value21,
+    /// Value22
+    Value22,
+    /// Value23
+    Value23,
+    /// Value24
+    Value24,
+    /// Value25
+    Value25,
+    /// Value26
+    Value26,
+    /// Value27
+    Value27,
+    /// Value28
+    Value28,
+    /// Value29
+    Value29,
+    /// Value30
+    Value30,
+    /// Value31
+    Value31,
+}
+
+impl From<CommonFieldTag> for usize {
+    fn from(value: CommonFieldTag) -> usize {
+        value as usize
+    }
+}
+
+impl From<u64> for CommonFieldTag {
+    fn from(value: u64) -> Self {
+        match value {
+            0 => CommonFieldTag::Value0,
+            1 => CommonFieldTag::Value1,
+            2 => CommonFieldTag::Value2,
+            3 => CommonFieldTag::Value3,
+            4 => CommonFieldTag::Value4,
+            5 => CommonFieldTag::Value5,
+            6 => CommonFieldTag::Value6,
+            7 => CommonFieldTag::Value7,
+            8 => CommonFieldTag::Value8,
+            9 => CommonFieldTag::Value9,
+            10 => CommonFieldTag::Value10,
+            11 => CommonFieldTag::Value11,
+            12 => CommonFieldTag::Value12,
+            13 => CommonFieldTag::Value13,
+            14 => CommonFieldTag::Value14,
+            15 => CommonFieldTag::Value15,
+            16 => CommonFieldTag::Value16,
+            17 => CommonFieldTag::Value17,
+            18 => CommonFieldTag::Value18,
+            19 => CommonFieldTag::Value19,
+            20 => CommonFieldTag::Value20,
+            21 => CommonFieldTag::Value21,
+            22 => CommonFieldTag::Value22,
+            23 => CommonFieldTag::Value23,
+            24 => CommonFieldTag::Value24,
+            25 => CommonFieldTag::Value25,
+            26 => CommonFieldTag::Value26,
+            27 => CommonFieldTag::Value27,
+            28 => CommonFieldTag::Value28,
+            29 => CommonFieldTag::Value29,
+            30 => CommonFieldTag::Value30,
+            31 => CommonFieldTag::Value31,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<CallContextFieldTag> for CommonFieldTag {
+    fn from(value: CallContextFieldTag) -> Self {
+        match value {
+            CallContextFieldTag::RwCounterEndOfReversion => CommonFieldTag::Value1,
+            CallContextFieldTag::CallerId => CommonFieldTag::Value2,
+            CallContextFieldTag::TxId => CommonFieldTag::Value3,
+            CallContextFieldTag::Depth => CommonFieldTag::Value4,
+            CallContextFieldTag::CallerAddress => CommonFieldTag::Value5,
+            CallContextFieldTag::CalleeAddress => CommonFieldTag::Value6,
+            CallContextFieldTag::CallDataOffset => CommonFieldTag::Value7,
+            CallContextFieldTag::CallDataLength => CommonFieldTag::Value8,
+            CallContextFieldTag::ReturnDataOffset => CommonFieldTag::Value9,
+            CallContextFieldTag::ReturnDataLength => CommonFieldTag::Value10,
+            CallContextFieldTag::Value => CommonFieldTag::Value11,
+            CallContextFieldTag::IsSuccess => CommonFieldTag::Value12,
+            CallContextFieldTag::IsPersistent => CommonFieldTag::Value13,
+            CallContextFieldTag::IsStatic => CommonFieldTag::Value14,
+            CallContextFieldTag::LastCalleeId => CommonFieldTag::Value15,
+            CallContextFieldTag::LastCalleeReturnDataOffset => CommonFieldTag::Value16,
+            CallContextFieldTag::LastCalleeReturnDataLength => CommonFieldTag::Value17,
+            CallContextFieldTag::IsRoot => CommonFieldTag::Value18,
+            CallContextFieldTag::IsCreate => CommonFieldTag::Value19,
+            CallContextFieldTag::CodeHash => CommonFieldTag::Value20,
+            CallContextFieldTag::ProgramCounter => CommonFieldTag::Value21,
+            CallContextFieldTag::StackPointer => CommonFieldTag::Value22,
+            CallContextFieldTag::GasLeft => CommonFieldTag::Value23,
+            CallContextFieldTag::MemorySize => CommonFieldTag::Value24,
+            CallContextFieldTag::ReversibleWriteCounter => CommonFieldTag::Value25,
+        }
+    }
+}

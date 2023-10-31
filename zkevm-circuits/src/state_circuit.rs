@@ -19,7 +19,9 @@ use self::{
 };
 use crate::{
     evm_circuit::util::address_word_to_expr,
-    table::{AccountFieldTag, LookupTable, MPTProofType, MptTable, RwTable, UXTable},
+    table::{
+        AccountFieldTag, CommonFieldTag, LookupTable, MPTProofType, MptTable, RwTable, UXTable,
+    },
     util::{word, Challenges, Expr, SubCircuit, SubCircuitConfig},
     witness::{self, MptUpdates, Rw, RwMap},
 };
@@ -112,6 +114,8 @@ impl<F: Field> SubCircuitConfig<F> for StateCircuitConfig<F> {
 
         let rw_counter = MpiChip::configure(meta, selector, [rw_table.rw_counter], lookups);
         let tag = BinaryNumberChip::configure(meta, selector, Some(rw_table.tag));
+        let field_tag_binary =
+            BinaryNumberChip::configure(meta, selector, Some(rw_table.field_tag));
         let id = MpiChip::configure(meta, selector, [rw_table.id], lookups);
 
         let address = MpiChip::configure(meta, selector, [rw_table.address], lookups);
@@ -142,6 +146,7 @@ impl<F: Field> SubCircuitConfig<F> for StateCircuitConfig<F> {
 
         let sort_keys = SortKeysConfig {
             tag,
+            field_tag_binary,
             id,
             field_tag: rw_table.field_tag,
             address,
@@ -251,6 +256,7 @@ impl<F: Field> StateCircuitConfig<F> {
         n_rows: usize, // 0 means dynamically calculated from `rows`.
     ) -> Result<(), Error> {
         let tag_chip = BinaryNumberChip::construct(self.sort_keys.tag);
+        let field_tag_chip = BinaryNumberChip::construct(self.sort_keys.field_tag_binary);
 
         let (rows, padding_length) = RwMap::table_assignments_prepad(rows, n_rows);
         let rows_len = rows.len();
@@ -273,6 +279,7 @@ impl<F: Field> StateCircuitConfig<F> {
             )?;
 
             tag_chip.assign(region, offset, &row.tag())?;
+            field_tag_chip.assign(region, offset, &row.field_tag().unwrap_or_default().into())?;
 
             self.sort_keys
                 .rw_counter
@@ -437,6 +444,7 @@ impl<F: Field> StateCircuitConfig<F> {
 #[derive(Clone, Copy)]
 pub struct SortKeysConfig {
     tag: BinaryNumberConfig<Target, 4>,
+    field_tag_binary: BinaryNumberConfig<CommonFieldTag, 5>,
     id: MpiConfig<u32, N_LIMBS_ID>,
     address: MpiConfig<Address, N_LIMBS_ACCOUNT_ADDRESS>,
     field_tag: Column<Advice>,
@@ -448,6 +456,8 @@ impl SortKeysConfig {
     /// Annotates this config within a circuit region.
     pub fn annotate_columns_in_region<F: Field>(&self, region: &mut Region<F>, prefix: &str) {
         self.tag.annotate_columns_in_region(region, prefix);
+        self.field_tag_binary
+            .annotate_columns_in_region(region, prefix);
         self.address.annotate_columns_in_region(region, prefix);
         self.id.annotate_columns_in_region(region, prefix);
         self.storage_key.annotate_columns_in_region(region, prefix);
@@ -588,6 +598,7 @@ fn queries<F: Field>(meta: &mut VirtualCells<'_, F>, c: &StateCircuitConfig<F>) 
             rw_counter: meta.query_advice(c.rw_table.rw_counter, Rotation::cur()),
             prev_rw_counter: meta.query_advice(c.rw_table.rw_counter, Rotation::prev()),
             is_write: meta.query_advice(c.rw_table.is_write, Rotation::cur()),
+            is_call_address: meta.query_advice(c.rw_table.is_call_address, Rotation::cur()),
             tag: meta.query_advice(c.rw_table.tag, Rotation::cur()),
             id: meta.query_advice(c.rw_table.id, Rotation::cur()),
             prev_id: meta.query_advice(c.rw_table.id, Rotation::prev()),
@@ -630,6 +641,11 @@ fn queries<F: Field>(meta: &mut VirtualCells<'_, F>, c: &StateCircuitConfig<F>) 
         tag_bits: c
             .sort_keys
             .tag
+            .bits
+            .map(|bit| meta.query_advice(bit, Rotation::cur())),
+        field_tag_bits: c
+            .sort_keys
+            .field_tag_binary
             .bits
             .map(|bit| meta.query_advice(bit, Rotation::cur())),
         id: MpiQueries::new(meta, c.sort_keys.id),

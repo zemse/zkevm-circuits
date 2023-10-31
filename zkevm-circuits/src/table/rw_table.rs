@@ -8,6 +8,8 @@ pub struct RwTable {
     pub rw_counter: Column<Advice>,
     /// Is Write
     pub is_write: Column<Advice>,
+    /// Is Call Address
+    pub is_call_address: Column<Advice>,
     /// Tag
     pub tag: Column<Advice>,
     /// Key1 (Id)
@@ -31,6 +33,7 @@ impl<F: Field> LookupTable<F> for RwTable {
         vec![
             self.rw_counter.into(),
             self.is_write.into(),
+            self.is_call_address.into(),
             self.tag.into(),
             self.id.into(),
             self.address.into(),
@@ -50,6 +53,7 @@ impl<F: Field> LookupTable<F> for RwTable {
         vec![
             String::from("rw_counter"),
             String::from("is_write"),
+            String::from("is_call_address"),
             String::from("tag"),
             String::from("id"),
             String::from("address"),
@@ -71,6 +75,7 @@ impl RwTable {
         Self {
             rw_counter: meta.advice_column(),
             is_write: meta.advice_column(),
+            is_call_address: meta.advice_column(),
             tag: meta.advice_column(),
             id: meta.advice_column(),
             address: meta.advice_column(),
@@ -90,6 +95,7 @@ impl RwTable {
         for (column, value) in [
             (self.rw_counter, row.rw_counter),
             (self.is_write, row.is_write),
+            (self.is_call_address, row.is_call_address),
             (self.tag, row.tag),
             (self.id, row.id),
             (self.address, row.address),
