@@ -130,7 +130,8 @@ pub(crate) const N_BYTES_BLOCK: usize = N_BYTES_COINBASE
     + N_BYTES_BASE_FEE
     + N_BYTES_CHAIN_ID
     + N_BYTES_PREV_HASH
-    + N_BYTES_WORD; // pox challenge bytecode hash;
+    + N_BYTES_WORD // pox challenge bytecode hash
+    + N_BYTES_WORD; // pox exploit balance
 
 pub(crate) const N_BYTES_EXTRA_VALUE: usize = N_BYTES_WORD // block hash
     + N_BYTES_WORD // state root

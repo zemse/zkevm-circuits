@@ -1,6 +1,6 @@
 //! The instance definition.
 
-use eth_types::{geth_types::BlockConstants, BigEndianHash, Field, Keccak};
+use eth_types::{geth_types::BlockConstants, BigEndianHash, Field, Keccak, U256};
 use std::{iter, ops::Deref};
 
 use eth_types::{geth_types::Transaction, Address, ToBigEndian, Word, H256};
@@ -29,6 +29,8 @@ pub struct BlockValues {
     pub history_hashes: Vec<H256>,
     /// pox challenge bytecode hash
     pub pox_challenge_codehash: H256,
+    /// pox exploit balance
+    pub pox_exploit_balance: U256,
 }
 
 /// Extra values (not contained in block or tx tables)
@@ -62,6 +64,8 @@ pub struct PublicData {
     pub block_hash: Option<H256>,
     /// POX Challenge Bytecode Hash
     pub pox_challenge_codehash: H256,
+    /// POX Exploit Balance
+    pub pox_exploit_balance: U256,
 }
 
 impl Default for PublicData {
@@ -75,6 +79,7 @@ impl Default for PublicData {
             block_constants: BlockConstants::default(),
             block_hash: None,
             pox_challenge_codehash: H256::zero(),
+            pox_exploit_balance: U256::zero(),
         }
     }
 }
@@ -100,6 +105,7 @@ impl PublicData {
             chain_id: self.chain_id.as_u64(),
             history_hashes,
             pox_challenge_codehash: self.pox_challenge_codehash,
+            pox_exploit_balance: self.pox_exploit_balance,
         }
     }
 
@@ -131,7 +137,8 @@ impl PublicData {
                     .iter()
                     .flat_map(|prev_hash| prev_hash.to_fixed_bytes()),
             ) // history_hashes
-            .chain(block_values.pox_challenge_codehash.to_fixed_bytes()); // pox challenge bytecode hash
+            .chain(block_values.pox_challenge_codehash.to_fixed_bytes()) // pox challenge bytecode hash
+            .chain(block_values.pox_exploit_balance.to_be_bytes()); // pox exploit balance
 
         // Assign extra fields
         let extra_vals = self.get_extra_values();
@@ -169,5 +176,6 @@ pub fn public_data_convert<F: Field>(block: &Block<F>) -> PublicData {
             base_fee: block.context.base_fee,
         },
         pox_challenge_codehash: H256::from_uint(&block.pox_challenge_codehash),
+        pox_exploit_balance: block.pox_exploit_balance,
     }
 }

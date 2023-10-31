@@ -10,6 +10,7 @@ use std::marker::PhantomData;
 #[cfg(feature = "test-circuits")]
 pub use PiCircuit as TestPiCircuit;
 
+use bus_mapping::operation::Target;
 use eth_types::{self, Field, ToLittleEndian};
 use halo2_proofs::plonk::{Expression, Instance, SecondPhase};
 use itertools::Itertools;
@@ -21,7 +22,7 @@ use crate::{
         util::constraint_builder::{BaseConstraintBuilder, ConstrainBuilderCommon},
     },
     instance::{public_data_convert, BlockValues, ExtraValues, PublicData},
-    table::{BlockTable, KeccakTable, LookupTable, RwTable},
+    table::{AccountFieldTag, BlockTable, KeccakTable, LookupTable, RwTable},
     util::{word::Word, Challenges, SubCircuit, SubCircuitConfig},
     witness,
 };
@@ -260,14 +261,43 @@ impl<F: Field> SubCircuitConfig<F> for PiCircuitConfig<F> {
                 let codehash_rw_lo = meta.query_advice(rw_table.value.lo(), Rotation::cur());
 
                 vec![
-                    (selector.expr() * 1.expr(), rw_counter),   // First RW
-                    (selector.expr() * 8.expr(), rw_tag),       // Account
-                    (selector.expr() * 3.expr(), rw_field_tag), // Account CodeHash
+                    (selector.expr() * 1.expr(), rw_counter), // First RW
+                    (selector.expr() * Target::Account.expr(), rw_tag),
+                    (
+                        selector.expr() * AccountFieldTag::CodeHash.expr(),
+                        rw_field_tag,
+                    ),
                     (selector.expr() * codehash_block_hi, codehash_rw_hi),
                     (selector.expr() * codehash_block_lo, codehash_rw_lo),
                 ]
             },
         );
+
+        meta.lookup_any("lookup pox exploit balance in the rw table", |meta| {
+            let selector = meta.query_selector(q_pox_challenge_codehash);
+
+            // data assigned in block table and exposed to public inputs
+            let exp_bal_block_hi = meta.query_advice(block_table.value.hi(), Rotation::next());
+            let exp_bal_block_lo = meta.query_advice(block_table.value.lo(), Rotation::next());
+
+            // table expression
+            let rw_counter = meta.query_advice(rw_table.rw_counter, Rotation::cur());
+            let rw_tag = meta.query_advice(rw_table.tag, Rotation::cur());
+            let rw_field_tag = meta.query_advice(rw_table.field_tag, Rotation::cur());
+            let exp_bal_rw_hi = meta.query_advice(rw_table.value.hi(), Rotation::cur());
+            let exp_bal_rw_lo = meta.query_advice(rw_table.value.lo(), Rotation::cur());
+
+            vec![
+                (selector.expr() * 3.expr(), rw_counter), // Third RW
+                (selector.expr() * Target::Account.expr(), rw_tag),
+                (
+                    selector.expr() * AccountFieldTag::Balance.expr(),
+                    rw_field_tag,
+                ),
+                (selector.expr() * exp_bal_block_hi, exp_bal_rw_hi),
+                (selector.expr() * exp_bal_block_lo, exp_bal_rw_lo),
+            ]
+        });
 
         Self {
             block_table,
@@ -682,6 +712,27 @@ impl<F: Field> PiCircuitConfig<F> {
                 .copied()
                 .rev()
                 .collect_vec(),
+            rpi_bytes_keccakrlc,
+            rpi_bytes,
+            current_offset,
+            challenges,
+            zero_cell.clone(),
+        )?;
+        block_copy_cells.push((block_value, word));
+        *block_table_offset += 1;
+
+        // pox exploit balance
+        let block_value = Word::from(block_values.pox_exploit_balance)
+            .into_value()
+            .assign_advice(
+                region,
+                || "pox_exploit_balance",
+                self.block_table.value,
+                *block_table_offset,
+            )?;
+        let (_, word) = self.assign_raw_bytes(
+            region,
+            &block_values.pox_exploit_balance.to_le_bytes(),
             rpi_bytes_keccakrlc,
             rpi_bytes,
             current_offset,
