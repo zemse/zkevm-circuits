@@ -846,8 +846,8 @@ impl<F: Field> PiCircuitConfig<F> {
 /// Public Inputs Circuit
 #[derive(Clone, Default, Debug)]
 pub struct PiCircuit<F: Field> {
-    max_txs: usize,
-    max_calldata: usize,
+    // max_txs: usize,
+    // max_calldata: usize,
     /// PublicInputs data known by the verifier
     pub public_data: PublicData,
     _marker: PhantomData<F>,
@@ -855,10 +855,13 @@ pub struct PiCircuit<F: Field> {
 
 impl<F: Field> PiCircuit<F> {
     /// Creates a new PiCircuit
-    pub fn new(max_txs: usize, max_calldata: usize, public_data: PublicData) -> Self {
+    pub fn new(
+        // max_txs: usize, max_calldata: usize,
+        public_data: PublicData,
+    ) -> Self {
         Self {
-            max_txs,
-            max_calldata,
+            // max_txs,
+            // max_calldata,
             public_data,
             _marker: PhantomData,
         }
@@ -877,8 +880,8 @@ impl<F: Field> SubCircuit<F> for PiCircuit<F> {
     fn new_from_block(block: &witness::Block<F>) -> Self {
         let public_data = public_data_convert(block);
         PiCircuit::new(
-            block.circuits_params.max_txs,
-            block.circuits_params.max_calldata,
+            // block.circuits_params.max_txs,
+            // block.circuits_params.max_calldata,
             public_data,
         )
     }
