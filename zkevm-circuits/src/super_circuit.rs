@@ -370,9 +370,10 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
 }
 
 /// Super Circuit configuration parameters
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SuperCircuitParams<F: Field> {
-    mock_randomness: F,
+    /// Mock Randomness
+    pub mock_randomness: F,
 }
 
 impl<F: Field> Circuit<F> for SuperCircuit<F> {
