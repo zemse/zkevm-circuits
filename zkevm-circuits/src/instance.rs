@@ -1,6 +1,7 @@
 //! The instance definition.
 
 use eth_types::{geth_types::BlockConstants, BigEndianHash, Field, Keccak, U256};
+use serde::{Deserialize, Serialize};
 use std::{iter, ops::Deref};
 
 use eth_types::{geth_types::Transaction, Address, ToBigEndian, Word, H256};
@@ -45,7 +46,7 @@ pub struct ExtraValues {
 }
 
 /// PublicData contains all the values that the PiCircuit recieves as input
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicData {
     /// chain id
     pub chain_id: Word,
