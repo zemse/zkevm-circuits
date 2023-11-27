@@ -9,7 +9,7 @@ use eth_types::{evm_unimplemented, Address, Bytes, Word};
 use std::collections::HashMap;
 
 /// Proof of Exploit inputs
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct PoxInputs {
     /// Hash of the challenge bytecode
     pub challenge_codehash: Word,
