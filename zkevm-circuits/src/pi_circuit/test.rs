@@ -19,8 +19,8 @@ fn pi_circuit_unusable_rows() {
     assert_eq!(
         PiCircuit::<Fr>::unusable_rows(),
         unusable_rows::<Fr, PiCircuit::<Fr>>(PiCircuitParams {
-            max_txs: 2,
-            max_calldata: 8,
+            // max_txs: 2,
+            // max_calldata: 8,
         }),
     )
 }
@@ -34,7 +34,7 @@ fn run<F: Field>(
     let mut public_data = public_data;
     public_data.chain_id = *MOCK_CHAIN_ID;
 
-    let circuit = PiCircuit::<F>::new(max_txs, max_calldata, public_data);
+    let circuit = PiCircuit::<F>::new(public_data);
 
     let public_inputs = circuit.instance();
 
@@ -141,11 +141,11 @@ fn test_1tx_1maxtx() {
 }
 
 fn run_size_check<F: Field>(max_txs: usize, max_calldata: usize, public_data: [PublicData; 2]) {
-    let circuit = PiCircuit::<F>::new(max_txs, max_calldata, public_data[0].clone());
+    let circuit = PiCircuit::<F>::new(public_data[0].clone());
     let public_inputs = circuit.instance();
     let prover1 = MockProver::run(20, &circuit, public_inputs).unwrap();
 
-    let circuit2 = PiCircuit::<F>::new(max_txs, max_calldata, public_data[1].clone());
+    let circuit2 = PiCircuit::<F>::new(public_data[1].clone());
     let public_inputs = circuit2.instance();
     let prover2 = MockProver::run(20, &circuit, public_inputs).unwrap();
 

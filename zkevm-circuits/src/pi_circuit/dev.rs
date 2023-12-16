@@ -15,10 +15,10 @@ use halo2_proofs::{
 /// Public Input Circuit configuration parameters
 #[derive(Default)]
 pub struct PiCircuitParams {
-    /// Max Txs
-    pub max_txs: usize,
-    /// Max Calldata
-    pub max_calldata: usize,
+    // Max Txs
+    // pub max_txs: usize,
+    // Max Calldata
+    // pub max_calldata: usize,
 }
 
 impl<F: Field> Circuit<F> for PiCircuit<F> {
@@ -32,8 +32,8 @@ impl<F: Field> Circuit<F> for PiCircuit<F> {
 
     fn params(&self) -> Self::Params {
         PiCircuitParams {
-            max_txs: self.max_txs,
-            max_calldata: self.max_calldata,
+            // max_txs: 1,
+            // max_calldata: 2000,
         }
     }
 
