@@ -17,6 +17,11 @@
 #![deny(unsafe_code)]
 #![deny(clippy::debug_assert_with_mut_call)]
 
+#[cfg(all(feature = "wasm", feature = "nowasm"))]
+compile_error!("zkevm-circuits: both wasm & nowasm are enabled, just one of them must be enabled");
+#[cfg(all(not(feature = "wasm"), not(feature = "nowasm")))]
+compile_error!("zkevm-circuits: none of wasm & nowasm are enabled, one of them must be enabled");
+
 pub mod bytecode_circuit;
 #[allow(dead_code, reason = "under active development")]
 pub mod circuit_tools;
@@ -27,12 +32,14 @@ pub mod keccak_circuit;
 #[allow(dead_code, reason = "under active development")]
 pub mod mpt_circuit;
 pub mod pi_circuit;
+#[cfg(not(feature = "wasm"))]
 pub mod root_circuit;
 pub mod state_circuit;
 pub mod super_circuit;
 pub mod table;
 
 #[cfg(any(test, feature = "test-util"))]
+#[cfg(not(feature = "wasm"))]
 pub mod test_util;
 
 pub mod instance;

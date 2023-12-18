@@ -222,6 +222,11 @@
 #![allow(clippy::upper_case_acronyms)] // Too pedantic
 #![feature(type_changing_struct_update)]
 
+#[cfg(all(feature = "wasm", feature = "nowasm"))]
+compile_error!("bus-mapping: both wasm & nowasm are enabled, just one of them must be enabled");
+#[cfg(all(not(feature = "wasm"), not(feature = "nowasm")))]
+compile_error!("bus-mapping: none of wasm & nowasm are enabled, one of them must be enabled");
+
 /// Address for challenge contract for Proof of Exploit
 /// 0xFEEDC0DE00000000000000000000000000000000
 pub const POX_CHALLENGE_ADDRESS: eth_types::H160 = eth_types::H160([
