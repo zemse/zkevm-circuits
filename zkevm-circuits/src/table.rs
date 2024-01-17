@@ -31,6 +31,8 @@ pub(crate) mod bytecode_table;
 pub(crate) mod copy_table;
 /// exp(exponentiation) table
 pub(crate) mod exp_table;
+/// init state table
+pub(crate) mod init_state_table;
 /// keccak table
 pub(crate) mod keccak_table;
 /// mpt table

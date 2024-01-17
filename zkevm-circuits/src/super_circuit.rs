@@ -58,12 +58,13 @@ use crate::{
     copy_circuit::{CopyCircuit, CopyCircuitConfig, CopyCircuitConfigArgs},
     evm_circuit::{EvmCircuit, EvmCircuitConfig, EvmCircuitConfigArgs},
     exp_circuit::{ExpCircuit, ExpCircuitConfig},
+    init_state_circuit::{InitStateCircuit, InitStateCircuitConfig, InitStateCircuitConfigArgs},
     keccak_circuit::{KeccakCircuit, KeccakCircuitConfig, KeccakCircuitConfigArgs},
     pi_circuit::{PiCircuit, PiCircuitConfig, PiCircuitConfigArgs},
     state_circuit::{StateCircuit, StateCircuitConfig, StateCircuitConfigArgs},
     table::{
-        BlockTable, BytecodeTable, CopyTable, ExpTable, KeccakTable, MptTable, RwTable, TxTable,
-        UXTable, WdTable,
+        init_state_table::InitStateTable, BlockTable, BytecodeTable, CopyTable, ExpTable,
+        KeccakTable, MptTable, RwTable, TxTable, UXTable, WdTable,
     },
     tx_circuit::{TxCircuit, TxCircuitConfig, TxCircuitConfigArgs},
     util::{log2_ceil, Challenges, SubCircuit, SubCircuitConfig},
@@ -97,6 +98,7 @@ pub struct SuperCircuitConfig<F: Field> {
     keccak_circuit: KeccakCircuitConfig<F>,
     pi_circuit: PiCircuitConfig<F>,
     exp_circuit: ExpCircuitConfig<F>,
+    init_state_circuit: InitStateCircuitConfig<F>,
 }
 
 impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
@@ -126,6 +128,7 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
         let u8_table = UXTable::construct(meta);
         let u10_table = UXTable::construct(meta);
         let u16_table = UXTable::construct(meta);
+        let init_state_table = InitStateTable::construct(meta);
 
         // Use a mock randomness instead of the randomness derived from the challenge
         // (either from mock or real prover) to help debugging assignments.
@@ -213,6 +216,14 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
                 feature_config,
             },
         );
+        let init_state_circuit = InitStateCircuitConfig::new(
+            meta,
+            InitStateCircuitConfigArgs {
+                block_table: block_table.clone(),
+                init_state_table,
+                rw_table,
+            },
+        );
 
         Self {
             block_table,
@@ -228,6 +239,7 @@ impl<F: Field> SubCircuitConfig<F> for SuperCircuitConfig<F> {
             keccak_circuit,
             pi_circuit,
             exp_circuit,
+            init_state_circuit,
         }
     }
 }
@@ -251,6 +263,8 @@ pub struct SuperCircuit<F: Field> {
     pub exp_circuit: ExpCircuit<F>,
     /// Keccak Circuit
     pub keccak_circuit: KeccakCircuit<F>,
+    /// Init State Circuit
+    pub init_state_circuit: InitStateCircuit<F>,
     /// Circuits Parameters
     pub circuits_params: FixedCParams,
     /// Feature Config
@@ -298,6 +312,7 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
         let copy_circuit = CopyCircuit::new_from_block_no_external(block);
         let exp_circuit = ExpCircuit::new_from_block(block);
         let keccak_circuit = KeccakCircuit::new_from_block(block);
+        let init_state_circuit = InitStateCircuit::new_from_block(block);
 
         SuperCircuit::<_> {
             evm_circuit,
@@ -308,6 +323,7 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
             copy_circuit,
             exp_circuit,
             keccak_circuit,
+            init_state_circuit,
             circuits_params: block.circuits_params,
             feature_config: block.feature_config,
             mock_randomness: block.randomness,
@@ -325,6 +341,7 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
         instance.extend_from_slice(&self.state_circuit.instance());
         instance.extend_from_slice(&self.exp_circuit.instance());
         instance.extend_from_slice(&self.evm_circuit.instance());
+        instance.extend_from_slice(&self.init_state_circuit.instance());
 
         instance
     }
@@ -339,8 +356,10 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
         let tx = TxCircuit::min_num_rows_block(block);
         let exp = ExpCircuit::min_num_rows_block(block);
         let pi = PiCircuit::min_num_rows_block(block);
+        let init_state = InitStateCircuit::min_num_rows_block(block);
 
-        let rows: Vec<(usize, usize)> = vec![evm, state, bytecode, copy, keccak, tx, exp, pi];
+        let rows: Vec<(usize, usize)> =
+            vec![evm, state, bytecode, copy, keccak, tx, exp, pi, init_state];
         let (rows_without_padding, rows_with_padding): (Vec<usize>, Vec<usize>) =
             rows.into_iter().unzip();
         (
@@ -372,6 +391,8 @@ impl<F: Field> SubCircuit<F> for SuperCircuit<F> {
             .synthesize_sub(&config.evm_circuit, challenges, layouter)?;
         self.pi_circuit
             .synthesize_sub(&config.pi_circuit, challenges, layouter)?;
+        self.init_state_circuit
+            .synthesize_sub(&config.init_state_circuit, challenges, layouter)?;
         Ok(())
     }
 }
