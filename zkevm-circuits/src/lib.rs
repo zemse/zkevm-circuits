@@ -34,6 +34,7 @@ pub mod keccak_circuit;
 pub mod mpt_circuit;
 pub mod pi_circuit;
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "snark-verifier")]
 pub mod root_circuit;
 pub mod state_circuit;
 pub mod super_circuit;
