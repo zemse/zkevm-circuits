@@ -169,6 +169,8 @@ pub enum ExecutionState {
     PrecompileBlake2f,
 }
 
+impl std::marker::ConstParamTy for ExecutionState {}
+
 impl Default for ExecutionState {
     fn default() -> Self {
         Self::STOP

@@ -15,8 +15,8 @@ array-init = "2.0.0"
 bus-mapping = { path = "../bus-mapping", default-features = false }
 eth-types = { path = "../eth-types" }
 gadgets = { path = "../gadgets" }
-ethers-core = "2.0.6"
-ethers-signers = { version = "2.0.6", optional = true }
+ethers-core = "=2.0.10"
+ethers-signers = { version = "=2.0.10", optional = true }
 mock = { path = "../mock", optional = true }
 strum = "0.24"
 strum_macros = "0.24"
@@ -40,6 +40,7 @@ serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.78"
 thiserror = "1.0"
 hex = {version = "0.4.3", features = ["serde"]}
+axiom-eth = { path = "../../axiom-eth/axiom-eth", default-features = false, features = ["halo2-pse", "aggregation", "evm"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
@@ -47,7 +48,7 @@ getrandom = { version = "0.2", features = ["js"] }
 [dev-dependencies]
 bus-mapping = { path = "../bus-mapping", default-features = false }
 ctor = "0.1.22"
-ethers-signers = "2.0.6"
+ethers-signers = "=2.0.10"
 itertools = "0.10.1"
 mock = { path = "../mock" }
 pretty_assertions = "1.0.0"

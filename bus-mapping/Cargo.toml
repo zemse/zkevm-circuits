@@ -10,8 +10,8 @@ eth-types = { path = "../eth-types" }
 gadgets = { path = "../gadgets" }
 mock = { path = "../mock", optional = true }
 
-ethers-core = "2.0.6"
-ethers-providers = "2.0.6"
+ethers-core = "=2.0.10"
+ethers-providers = "=2.0.10"
 halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2.git", tag = "v0.3.0" }
 itertools = "0.10"
 lazy_static = "1.4"

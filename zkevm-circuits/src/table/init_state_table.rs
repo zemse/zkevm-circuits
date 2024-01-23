@@ -28,9 +28,9 @@ pub struct InitStateTable {
     /// InitStateFieldTag
     pub field_tag: Column<Advice>,
     /// Account Storage Key if InitStateFieldTag is Storage
-    pub storage_key: Word<Column<Advice>>,
+    pub storage_key: WordLoHi<Column<Advice>>,
     /// Value
-    pub value: Word<Column<Advice>>,
+    pub value: WordLoHi<Column<Advice>>,
 }
 
 impl InitStateTable {
@@ -39,8 +39,8 @@ impl InitStateTable {
         Self {
             address: meta.advice_column(),
             field_tag: meta.advice_column(),
-            storage_key: word::Word::new([meta.advice_column(), meta.advice_column()]),
-            value: word::Word::new([meta.advice_column(), meta.advice_column()]),
+            storage_key: WordLoHi::new([meta.advice_column(), meta.advice_column()]),
+            value: WordLoHi::new([meta.advice_column(), meta.advice_column()]),
         }
     }
 
@@ -67,7 +67,7 @@ impl InitStateTable {
                 }
                 offset += 1;
 
-                let zero_word = Word::new([F::ZERO, F::ZERO]).into_value();
+                let zero_word = WordLoHi::new([F::ZERO, F::ZERO]).into_value();
 
                 // TODO remove duplicates
                 let account_rws: &Vec<Rw> = rws.0.get(&RwTableTag::Account).unwrap();
@@ -98,7 +98,7 @@ impl InitStateTable {
                         self.storage_key,
                         offset,
                     )?;
-                    Word::from(rw.value_assignment())
+                    WordLoHi::from(rw.value_assignment())
                         .into_value()
                         .assign_advice(
                             &mut region,
@@ -114,8 +114,8 @@ impl InitStateTable {
                 for rw in storage_rws.iter() {
                     let address: F = rw.address().unwrap().to_scalar().unwrap();
                     let field_tag: F = F::from(InitStateFieldTag::Storage as u64);
-                    let storage_key = Word::from(rw.storage_key().unwrap()).into_value();
-                    let storage_value = Word::from(rw.value_assignment()).into_value();
+                    let storage_key = WordLoHi::from(rw.storage_key().unwrap()).into_value();
+                    let storage_value = WordLoHi::from(rw.value_assignment()).into_value();
 
                     region.assign_advice(
                         || format!("is table row {offset} address"),

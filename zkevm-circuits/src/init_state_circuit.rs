@@ -15,6 +15,8 @@ use halo2_proofs::{
 #[allow(unused_imports)]
 use std::{env::set_var, marker::PhantomData};
 
+use axiom_eth;
+
 /// Config for InitStateCircuit
 #[derive(Clone, Debug)]
 pub struct InitStateCircuitConfig<F: Field> {
