@@ -15,7 +15,7 @@ use halo2_proofs::{
 #[allow(unused_imports)]
 use std::{env::set_var, marker::PhantomData};
 
-use axiom_eth;
+use axiom_eth::halo2_base::gates::circuit::{BaseCircuitParams, BaseConfig};
 
 /// Config for InitStateCircuit
 #[derive(Clone, Debug)]
@@ -24,6 +24,7 @@ pub struct InitStateCircuitConfig<F: Field> {
     init_state_table: InitStateTable,
     rw_table: RwTable,
     // axiom_eth_config: EthConfig<F>,
+    // axiom_base_config: BaseConfig<F>,
     instance: Column<Instance>,
     _marker: PhantomData<F>,
 }
@@ -59,6 +60,7 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             init_state_table,
             rw_table,
             // axiom_eth_config: EthConfig::configure(meta, eth_config_params),
+            // axiom_base_config: BaseConfig::configure(meta, BaseCircuitParams::default()),
             instance,
             _marker: PhantomData,
         }

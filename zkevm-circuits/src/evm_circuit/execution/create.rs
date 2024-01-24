@@ -684,7 +684,7 @@ impl<F: Field, const IS_CREATE2: bool, const S: ExecutionState> ExecutionGadget<
                 region.keccak_rlc(&values.iter().rev().cloned().collect::<Vec<u8>>()),
             )?;
             self.was_warm
-                .assign(region, offset, Value::known(F::from(was_warm.into())))?;
+                .assign(region, offset, Value::known(F::from(was_warm as u64)))?;
             self.callee_nonce
                 .assign(region, offset, Value::known(F::ZERO))?;
 

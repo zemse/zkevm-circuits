@@ -20,17 +20,15 @@ pub mod evm_types;
 pub mod geth_types;
 pub mod keccak;
 pub mod sign_types;
+pub use axiom_eth::halo2_base::utils::ScalarField;
+use halo2_proofs::{
+    halo2curves::bn256::{Fq, Fr},
+    plonk::Expression,
+};
 pub use keccak::{keccak256, Keccak};
 
 pub use bytecode::Bytecode;
 pub use error::Error;
-use halo2_proofs::{
-    halo2curves::{
-        bn256::{Fq, Fr},
-        ff::{Field as Halo2Field, FromUniformBytes, PrimeField},
-    },
-    plonk::Expression,
-};
 
 use crate::evm_types::{memory::Memory, stack::Stack, storage::Storage, OpcodeId};
 use ethers_core::types;
@@ -94,28 +92,32 @@ impl OpsIdentity for Fq {
 
 /// Trait used to reduce verbosity with the declaration of the [`PrimeField`]
 /// trait and its repr.
-pub trait Field:
-    Halo2Field + PrimeField<Repr = [u8; 32]> + FromUniformBytes<64> + Ord + OpsIdentity<Output = Self>
-{
-    /// Gets the lower 128 bits of this field element when expressed
-    /// canonically.
-    fn get_lower_128(&self) -> u128 {
-        let bytes = self.to_repr();
-        bytes[..16]
-            .iter()
-            .rev()
-            .fold(0u128, |acc, value| acc * 256u128 + *value as u128)
-    }
-    /// Gets the lower 32 bits of this field element when expressed
-    /// canonically.
-    fn get_lower_32(&self) -> u32 {
-        let bytes = self.to_repr();
-        bytes[..4]
-            .iter()
-            .rev()
-            .fold(0u32, |acc, value| acc * 256u32 + *value as u32)
-    }
-}
+pub trait Field: ScalarField + OpsIdentity<Output = Self> {}
+
+/// Trait used to reduce verbosity with the declaration of the [`PrimeField`]
+/// trait and its repr.
+// pub trait Field:
+//     Halo2Field + PrimeField<Repr = [u8; 32]> + FromUniformBytes<64> + Ord + OpsIdentity<Output =
+// Self> {
+//     /// Gets the lower 128 bits of this field element when expressed
+//     /// canonically.
+//     fn get_lower_128(&self) -> u128 {
+//         let bytes = self.to_repr();
+//         bytes[..16]
+//             .iter()
+//             .rev()
+//             .fold(0u128, |acc, value| acc * 256u128 + *value as u128)
+//     }
+//     /// Gets the lower 32 bits of this field element when expressed
+//     /// canonically.
+//     fn get_lower_32(&self) -> u32 {
+//         let bytes = self.to_repr();
+//         bytes[..4]
+//             .iter()
+//             .rev()
+//             .fold(0u32, |acc, value| acc * 256u32 + *value as u32)
+//     }
+// }
 
 // Impl custom `Field` trait for BN256 Fr to be used and consistent with the
 // rest of the workspace.
@@ -181,7 +183,7 @@ impl<F: Field> ToScalar<F> for DebugU256 {
     fn to_scalar(&self) -> Option<F> {
         let mut bytes = [0u8; 32];
         self.to_little_endian(&mut bytes);
-        F::from_repr(bytes).into()
+        F::from_bytes_le(&bytes).into()
     }
 }
 
@@ -225,7 +227,7 @@ impl<F: Field> ToScalar<F> for U256 {
     fn to_scalar(&self) -> Option<F> {
         let mut bytes = [0u8; 32];
         self.to_little_endian(&mut bytes);
-        F::from_repr(bytes).into()
+        F::from_bytes_le(&bytes).into()
     }
 }
 
@@ -310,7 +312,7 @@ impl<F: Field> ToScalar<F> for Address {
         let mut bytes = [0u8; 32];
         bytes[32 - Self::len_bytes()..].copy_from_slice(self.as_bytes());
         bytes.reverse();
-        F::from_repr(bytes).into()
+        F::from_bytes_le(&bytes).into()
     }
 }
 

@@ -69,7 +69,7 @@ impl<F: Field, const N_BYTES: usize> LtGadget<F, N_BYTES> {
 
         // Set the bytes of diff
         let diff = (lhs - rhs) + (if lt { self.range } else { F::ZERO });
-        let diff_bytes = diff.to_repr();
+        let diff_bytes = diff.to_bytes_le();
         for (idx, diff) in self.diff.iter().enumerate() {
             diff.assign(
                 region,

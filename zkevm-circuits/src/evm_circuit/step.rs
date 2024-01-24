@@ -25,6 +25,7 @@ use bus_mapping::{
     precompile::PrecompileCalls,
 };
 use eth_types::{evm_unimplemented, Field, ToWord};
+use gadgets::util::Scalar;
 use halo2_proofs::{
     circuit::Value,
     plonk::{Advice, Column, ConstraintSystem, Error, Expression},
@@ -837,7 +838,7 @@ impl<F: Field> Step<F> {
             .assign(region, offset, step.execution_state() as usize)?;
         self.state
             .rw_counter
-            .assign(region, offset, Value::known(F::from(step.rwc.into())))?;
+            .assign(region, offset, Value::known(step.rwc.scalar()))?;
         self.state
             .call_id
             .assign(region, offset, Value::known(F::from(call.call_id as u64)))?;

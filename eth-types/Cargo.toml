@@ -23,6 +23,7 @@ num = "0.4"
 num-bigint = { version = "0.4" }
 strum_macros = "0.24"
 strum = "0.24"
+axiom-eth = { path = "../../axiom-eth/axiom-eth", default-features = false, features = ["halo2-pse", "aggregation", "evm"] }
 
 [features]
 warn-unimplemented = []

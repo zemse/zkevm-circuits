@@ -136,7 +136,7 @@ impl<F: Field, const N_BYTES: usize> LtInstruction<F> for LtChip<F, N_BYTES> {
             } else {
                 diff += F::ZERO;
             }
-            diff.to_repr()
+            diff.to_bytes_le()
         });
 
         for (idx, diff_column) in config.diff.iter().enumerate() {

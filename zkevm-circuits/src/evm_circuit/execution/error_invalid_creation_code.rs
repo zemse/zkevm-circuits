@@ -81,14 +81,14 @@ impl<F: Field> ExecutionGadget<F> for ErrorInvalidCreationCodeGadget<F> {
         self.memory_address
             .assign(region, offset, memory_offset, length)?;
 
-        let first_byte = block.rws[step.rw_index(2)].memory_value().into();
+        let first_byte = block.rws[step.rw_index(2)].memory_value() as u64;
         self.first_byte
             .assign(region, offset, Value::known(F::from(first_byte)))?;
         self.is_first_byte_invalid.assign(
             region,
             offset,
             F::from(first_byte),
-            F::from(INVALID_INIT_CODE_FIRST_BYTE.into()),
+            F::from(INVALID_INIT_CODE_FIRST_BYTE as u64),
         )?;
 
         self.common_error_gadget

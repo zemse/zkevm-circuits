@@ -81,8 +81,8 @@ impl BytecodeTable {
                                     code_hash.hi(),
                                     F::from(BytecodeFieldTag::Byte as u64),
                                     F::from(index as u64),
-                                    F::from(is_code.into()),
-                                    F::from(byte.into()),
+                                    F::from(is_code as u64),
+                                    F::from(byte as u64),
                                 ]
                             },
                         ))

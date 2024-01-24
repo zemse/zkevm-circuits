@@ -7,6 +7,7 @@ use crate::{
     },
     state_db::{self, CodeDB, StateDB},
 };
+use axiom_eth::storage::circuit::EthBlockStorageInput;
 use eth_types::{geth_types::GethData, Word};
 
 /// BlockData is a type that contains all the information from a block required
@@ -50,6 +51,7 @@ impl<C: CircuitsParams> BlockData<C> {
                 self.history_hashes.clone(),
                 Word::default(),
                 &self.eth_block,
+                EthBlockStorageInput::default(),
             )
             .unwrap(),
             self.circuits_params,

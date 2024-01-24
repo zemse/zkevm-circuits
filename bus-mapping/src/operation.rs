@@ -6,12 +6,12 @@ pub(crate) mod container;
 
 pub use container::OperationContainer;
 pub use eth_types::evm_types::{MemoryAddress, StackAddress};
-use gadgets::impl_expr;
+use gadgets::{impl_expr, util::Scalar};
 use halo2_proofs::plonk::Expression;
 use strum_macros::EnumIter;
 
 use core::{cmp::Ordering, fmt, fmt::Debug};
-use eth_types::{Address, Word};
+use eth_types::{Address, Field, Word};
 use std::mem::swap;
 
 /// Marker that defines whether an Operation performs a `READ` or a `WRITE`.
@@ -68,6 +68,12 @@ impl From<usize> for RWCounter {
 impl Default for RWCounter {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<F: Field> Scalar<F> for RWCounter {
+    fn scalar(&self) -> F {
+        F::from(self.0 as u64)
     }
 }
 

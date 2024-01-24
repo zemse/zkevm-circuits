@@ -368,7 +368,7 @@ impl<F: Field> WordLoHi<F> {
     /// Convert address (h160) to single field element.
     /// This method is Address specific
     pub fn compress_f(&self) -> F {
-        self.lo() + self.hi() * F::from_repr(BASE_128_BYTES).unwrap()
+        self.lo() + self.hi() * F::from_bytes_le(&BASE_128_BYTES)
     }
 }
 
@@ -416,7 +416,7 @@ impl<F: Field> WordLoHi<Expression<F>> {
     /// Convert address (h160) to single expression.
     /// This method is Address specific
     pub fn compress(&self) -> Expression<F> {
-        self.lo() + self.hi() * Expression::Constant(F::from_repr(BASE_128_BYTES).unwrap())
+        self.lo() + self.hi() * Expression::Constant(F::from_bytes_le(&BASE_128_BYTES))
     }
 }
 

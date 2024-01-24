@@ -28,6 +28,7 @@ use eth_types::{
     evm_types::{GasCost, INVALID_INIT_CODE_FIRST_BYTE},
     Field, ToScalar, U256,
 };
+use gadgets::util::Scalar;
 use halo2_proofs::{circuit::Value, plonk::Error};
 
 #[derive(Clone, Debug)]
@@ -348,7 +349,7 @@ impl<F: Field> ExecutionGadget<F> for ReturnRevertGadget<F> {
 
         let is_contract_deployment = call.is_create() && call.is_success && !length.is_zero();
 
-        let init_code_first_byte = if is_contract_deployment {
+        let init_code_first_byte: u64 = if is_contract_deployment {
             block.get_rws(step, 3).memory_value()
         } else {
             0
@@ -363,7 +364,7 @@ impl<F: Field> ExecutionGadget<F> for ReturnRevertGadget<F> {
             region,
             offset,
             F::from(init_code_first_byte),
-            F::from(INVALID_INIT_CODE_FIRST_BYTE.into()),
+            INVALID_INIT_CODE_FIRST_BYTE.scalar(),
         )?;
 
         if !call.is_root {

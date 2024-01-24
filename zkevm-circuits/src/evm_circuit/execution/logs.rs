@@ -29,6 +29,7 @@ use eth_types::{
     evm_types::{GasCost, OpcodeId},
     Field, ToScalar, U256,
 };
+use gadgets::util::Scalar;
 use halo2_proofs::{circuit::Value, plonk::Error};
 
 #[derive(Clone, Debug)]
@@ -230,7 +231,7 @@ impl<F: Field> ExecutionGadget<F> for LogGadget<F> {
             self.topic_selectors[i].assign(
                 region,
                 offset,
-                Value::known(F::from(topic.is_some().into())),
+                Value::known(topic.is_some().scalar()),
             )?;
             self.topics[i].assign_u256(region, offset, topic.unwrap_or_default())?;
         }

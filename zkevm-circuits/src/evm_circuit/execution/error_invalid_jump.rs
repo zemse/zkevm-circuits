@@ -142,13 +142,13 @@ impl<F: Field> ExecutionGadget<F> for ErrorInvalidJumpGadget<F> {
         let (value, is_code) = code.get(dest).unwrap_or((0, false));
 
         self.value
-            .assign(region, offset, Value::known(F::from(value.into())))?;
+            .assign(region, offset, Value::known(F::from(value as u64)))?;
         self.is_code
-            .assign(region, offset, Value::known(F::from(is_code.into())))?;
+            .assign(region, offset, Value::known(F::from(is_code as u64)))?;
         self.is_jump_dest.assign(
             region,
             offset,
-            F::from(value.into()),
+            F::from(value as u64),
             F::from(OpcodeId::JUMPDEST.as_u64()),
         )?;
 

@@ -1211,7 +1211,7 @@ impl<F: Field, const VALID_BYTES: usize> WordByteCapGadget<F, VALID_BYTES> {
         let value = if not_overflow {
             let mut bytes = [0; 32];
             bytes[0..VALID_BYTES].copy_from_slice(&original.to_le_bytes()[0..VALID_BYTES]);
-            F::from_repr(bytes).unwrap()
+            F::from_bytes_le(&bytes)
         } else {
             cap
         };

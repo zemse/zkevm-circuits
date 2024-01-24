@@ -20,6 +20,7 @@ use crate::{
     state_db::{self, CodeDB, StateDB},
 };
 pub use access::{Access, AccessSet, AccessValue, CodeSource};
+use axiom_eth::storage::circuit::EthBlockStorageInput;
 pub use block::{Block, BlockContext};
 pub use call::{Call, CallContext, CallKind};
 use core::fmt::Debug;
@@ -800,7 +801,13 @@ impl<P: JsonRpcClient> BuilderClient<P> {
         history_hashes: Vec<Word>,
         prev_state_root: Word,
     ) -> Result<CircuitInputBuilder<FixedCParams>, Error> {
-        let block = Block::new(self.chain_id, history_hashes, prev_state_root, eth_block)?;
+        let block = Block::new(
+            self.chain_id,
+            history_hashes,
+            prev_state_root,
+            eth_block,
+            EthBlockStorageInput::default(),
+        )?;
         let mut builder = CircuitInputBuilder::new(
             sdb,
             code_db,

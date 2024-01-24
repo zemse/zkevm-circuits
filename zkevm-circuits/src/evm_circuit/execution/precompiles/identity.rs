@@ -1,6 +1,6 @@
 use bus_mapping::circuit_input_builder::Call;
 use eth_types::{evm_types::GasCost, Field, ToScalar};
-use gadgets::util::{select, Expr};
+use gadgets::util::{select, Expr, Scalar};
 use halo2_proofs::{circuit::Value, plonk::Error};
 
 use crate::{
@@ -124,11 +124,8 @@ impl<F: Field> ExecutionGadget<F> for IdentityGadget<F> {
             offset,
             Value::known(call.code_address().unwrap().to_scalar().unwrap()),
         )?;
-        self.caller_id.assign(
-            region,
-            offset,
-            Value::known(F::from(call.caller_id.try_into().unwrap())),
-        )?;
+        self.caller_id
+            .assign(region, offset, Value::known(call.caller_id.scalar()))?;
         self.call_data_offset.assign(
             region,
             offset,

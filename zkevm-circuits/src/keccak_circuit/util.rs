@@ -157,7 +157,7 @@ pub(crate) fn field_xor<F: Field>(a: F, b: F) -> F {
     {
         bytes[idx] = *a ^ *b;
     }
-    F::from_repr(bytes).unwrap()
+    F::from_bytes_le(&bytes)
 }
 
 /// Returns the size (in bits) of each part size when splitting up a keccak word

@@ -36,7 +36,7 @@ impl<F: Field, const N_BYTES: usize> RangeCheckGadget<F, N_BYTES> {
         offset: usize,
         value: F,
     ) -> Result<(), Error> {
-        let bytes = value.to_repr();
+        let bytes = value.to_bytes_le();
         for (idx, part) in self.parts.iter().enumerate() {
             part.assign(region, offset, Value::known(F::from(bytes[idx] as u64)))?;
         }

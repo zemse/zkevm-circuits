@@ -113,13 +113,13 @@ impl<F: Field> From<Vec<Bytecode>> for BytecodeCircuitAssignment<F> {
 
             for (index, &(value, is_code)) in bytecode.code_vec().iter().enumerate() {
                 let push_data_size = get_push_size(value);
-                let value = F::from(value.into());
+                let value = F::from(value as u64);
 
                 let body = BytecodeCircuitRow {
                     code_hash,
                     tag: F::from(BytecodeFieldTag::Byte as u64),
                     index: F::from(index as u64),
-                    is_code: F::from(is_code.into()),
+                    is_code: F::from(is_code as u64),
                     value,
                     push_data_left,
                     value_rlc: Value::unknown(),
@@ -651,7 +651,7 @@ impl<F: Field> BytecodeCircuitConfig<F> {
             || format!("assign q_enable {}", offset),
             self.q_enable,
             offset,
-            || Value::known(F::from((offset <= last_row_offset).into())),
+            || Value::known(F::from((offset <= last_row_offset) as u64)),
         )?;
 
         // q_first
@@ -659,7 +659,7 @@ impl<F: Field> BytecodeCircuitConfig<F> {
             || format!("assign q_first {}", offset),
             self.q_first,
             offset,
-            || Value::known(F::from((offset == 0).into())),
+            || Value::known(F::from((offset == 0) as u64)),
         )?;
 
         // q_last
@@ -667,7 +667,7 @@ impl<F: Field> BytecodeCircuitConfig<F> {
             || format!("assign q_last {}", offset),
             self.q_last,
             offset,
-            || Value::known(F::from((offset == last_row_offset).into())),
+            || Value::known(F::from((offset == last_row_offset) as u64)),
         )?;
 
         // Advices
