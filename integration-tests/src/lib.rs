@@ -159,4 +159,5 @@ pub mod bindings_greeter;
 #[allow(clippy::all)]
 pub mod bindings_openzeppelinerc20testtoken;
 /// Common code for integration tests of circuits.
+#[cfg(feature = "snark-verifier")]
 pub mod integration_test_circuits;

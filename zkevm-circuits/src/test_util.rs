@@ -35,7 +35,7 @@ const NUM_BLINDING_ROWS: usize = 64;
 /// Struct used to easily generate tests for EVM &| State circuits being able to
 /// customize all of the steps involved in the testing itself.
 ///
-/// By default, the tests run through `prover.assert_satisfied_par()` but the
+/// By default, the tests run through `prover.assert_satisfied()` but the
 /// builder pattern provides functions that allow to pass different functions
 /// that the prover should execute when verifying the CTB correctness.
 ///
