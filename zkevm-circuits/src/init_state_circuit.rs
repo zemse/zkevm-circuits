@@ -15,7 +15,10 @@ use halo2_proofs::{
 #[allow(unused_imports)]
 use std::{env::set_var, marker::PhantomData};
 
-use axiom_eth::halo2_base::gates::circuit::{BaseCircuitParams, BaseConfig};
+use axiom_eth::{
+    halo2_base::gates::circuit::{BaseCircuitParams, BaseConfig},
+    storage::circuit::{EthBlockStorageCircuit, EthBlockStorageInput},
+};
 
 /// Config for InitStateCircuit
 #[derive(Clone, Debug)]
@@ -24,7 +27,7 @@ pub struct InitStateCircuitConfig<F: Field> {
     init_state_table: InitStateTable,
     rw_table: RwTable,
     // axiom_eth_config: EthConfig<F>,
-    // axiom_base_config: BaseConfig<F>,
+    axiom_base_config: BaseConfig<F>,
     instance: Column<Instance>,
     _marker: PhantomData<F>,
 }
@@ -60,7 +63,17 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
             init_state_table,
             rw_table,
             // axiom_eth_config: EthConfig::configure(meta, eth_config_params),
-            // axiom_base_config: BaseConfig::configure(meta, BaseCircuitParams::default()),
+            axiom_base_config: BaseConfig::configure(
+                meta,
+                BaseCircuitParams {
+                    k: 16,
+                    num_advice_per_phase: vec![1, 1],
+                    num_fixed: 1,
+                    num_lookup_advice_per_phase: vec![],
+                    lookup_bits: None,
+                    num_instance_columns: 0,
+                },
+            ),
             instance,
             _marker: PhantomData,
         }
@@ -71,7 +84,7 @@ impl<F: Field> SubCircuitConfig<F> for InitStateCircuitConfig<F> {
 #[derive(Clone, Default, Debug)]
 pub struct InitStateCircuit<F: Field> {
     rws: RwMap,
-    // axiom_inputs: EthBlockStorageInput,
+    axiom_inputs: EthBlockStorageInput,
     _marker: PhantomData<F>,
 }
 
@@ -85,7 +98,7 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
     fn new_from_block(block: &crate::witness::Block<F>) -> Self {
         Self {
             rws: block.rws.clone(),
-            // axiom_inputs: block.axiom_inputs.clone(),
+            axiom_inputs: block.axiom_inputs.clone(),
             _marker: PhantomData,
         }
     }
@@ -96,6 +109,16 @@ impl<F: Field> SubCircuit<F> for InitStateCircuit<F> {
         challenges: &crate::util::Challenges<halo2_proofs::circuit::Value<F>>,
         layouter: &mut impl halo2_proofs::circuit::Layouter<F>,
     ) -> Result<(), halo2_proofs::plonk::Error> {
+        config.init_state_table.load(layouter, &self.rws)?;
+
+        // let axiom_eth_block_storage_circuit =
+        //     EthBlockStorageCircuitGeneric::new(self.axiom_inputs.clone());
+
+        let val = EthBlockStorageCircuit::<F>::new(
+            self.axiom_inputs.clone(),
+            ethers_core::types::Chain::Sepolia,
+        );
+
         // TODO
 
         Ok(())
