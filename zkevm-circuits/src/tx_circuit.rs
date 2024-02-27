@@ -2241,54 +2241,54 @@ impl<F: Field> TxCircuitConfig<F> {
         ////////////////////////////////////////////////////////////////////
         /////////////////    Sig table lookups     //////////////////////
         ///////////////// //////////////////////////////////////////////////
-        meta.lookup_any("Sig table lookup", |meta| {
-            let enabled = and::expr([
-                // use is_l1_msg_col instead of is_l1_msg(meta) because it has lower degree
-                not::expr(meta.query_advice(is_l1_msg_col, Rotation::cur())),
-                // lookup to sig table on the ChainID row because we have an indicator of degree 1
-                // for ChainID and ChainID is not far from (msg_hash_rlc, sig_v,
-                // ...)
-                meta.query_advice(is_chain_id, Rotation::cur()),
-            ]);
+        // meta.lookup_any("Sig table lookup", |meta| {
+        //     let enabled = and::expr([
+        //         // use is_l1_msg_col instead of is_l1_msg(meta) because it has lower degree
+        //         not::expr(meta.query_advice(is_l1_msg_col, Rotation::cur())),
+        //         // lookup to sig table on the ChainID row because we have an indicator of degree
+        // 1         // for ChainID and ChainID is not far from (msg_hash_rlc, sig_v,
+        //         // ...)
+        //         meta.query_advice(is_chain_id, Rotation::cur()),
+        //     ]);
 
-            let msg_hash_rlc = meta.query_advice(tx_table.value, Rotation(6));
-            let chain_id = meta.query_advice(tx_table.value, Rotation::cur());
-            let sig_v = meta.query_advice(tx_table.value, Rotation(1));
-            let sig_r = meta.query_advice(tx_table.value, Rotation(2));
-            let sig_s = meta.query_advice(tx_table.value, Rotation(3));
-            let sv_address = meta.query_advice(sv_address, Rotation::cur());
+        //     let msg_hash_rlc = meta.query_advice(tx_table.value, Rotation(6));
+        //     let chain_id = meta.query_advice(tx_table.value, Rotation::cur());
+        //     let sig_v = meta.query_advice(tx_table.value, Rotation(1));
+        //     let sig_r = meta.query_advice(tx_table.value, Rotation(2));
+        //     let sig_s = meta.query_advice(tx_table.value, Rotation(3));
+        //     let sv_address = meta.query_advice(sv_address, Rotation::cur());
 
-            let v = is_eip155(meta) * (sig_v.expr() - 2.expr() * chain_id - 35.expr())
-                + is_pre_eip155(meta) * (sig_v.expr() - 27.expr());
+        //     let v = is_eip155(meta) * (sig_v.expr() - 2.expr() * chain_id - 35.expr())
+        //         + is_pre_eip155(meta) * (sig_v.expr() - 27.expr());
 
-            let input_exprs = vec![
-                1.expr(),     // q_enable = true
-                msg_hash_rlc, // msg_hash_rlc
-                v,            // sig_v
-                sig_r,        // sig_r
-                sig_s,        // sig_s
-                sv_address,
-                1.expr(), // is_valid
-            ];
+        //     let input_exprs = vec![
+        //         1.expr(),     // q_enable = true
+        //         msg_hash_rlc, // msg_hash_rlc
+        //         v,            // sig_v
+        //         sig_r,        // sig_r
+        //         sig_s,        // sig_s
+        //         sv_address,
+        //         1.expr(), // is_valid
+        //     ];
 
-            // LookupTable::table_exprs is not used here since `is_valid` not used by evm circuit.
-            let table_exprs = vec![
-                meta.query_fixed(sig_table.q_enable, Rotation::cur()),
-                // msg_hash_rlc not needed to be looked up for tx circuit?
-                meta.query_advice(sig_table.msg_hash_rlc, Rotation::cur()),
-                meta.query_advice(sig_table.sig_v, Rotation::cur()),
-                meta.query_advice(sig_table.sig_r_rlc, Rotation::cur()),
-                meta.query_advice(sig_table.sig_s_rlc, Rotation::cur()),
-                meta.query_advice(sig_table.recovered_addr, Rotation::cur()),
-                meta.query_advice(sig_table.is_valid, Rotation::cur()),
-            ];
+        //     // LookupTable::table_exprs is not used here since `is_valid` not used by evm
+        // circuit.     let table_exprs = vec![
+        //         meta.query_fixed(sig_table.q_enable, Rotation::cur()),
+        //         // msg_hash_rlc not needed to be looked up for tx circuit?
+        //         meta.query_advice(sig_table.msg_hash_rlc, Rotation::cur()),
+        //         meta.query_advice(sig_table.sig_v, Rotation::cur()),
+        //         meta.query_advice(sig_table.sig_r_rlc, Rotation::cur()),
+        //         meta.query_advice(sig_table.sig_s_rlc, Rotation::cur()),
+        //         meta.query_advice(sig_table.recovered_addr, Rotation::cur()),
+        //         meta.query_advice(sig_table.is_valid, Rotation::cur()),
+        //     ];
 
-            input_exprs
-                .into_iter()
-                .zip(table_exprs)
-                .map(|(input, table)| (input * enabled.expr(), table))
-                .collect()
-        });
+        //     input_exprs
+        //         .into_iter()
+        //         .zip(table_exprs)
+        //         .map(|(input, table)| (input * enabled.expr(), table))
+        //         .collect()
+        // });
 
         ////////////////////////////////////////////////////////////////////
         /////////////////    Keccak table lookups     //////////////////////
