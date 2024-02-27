@@ -189,11 +189,13 @@ fn block_1tx_ctx() -> TestContext<2, 1> {
 }
 
 #[cfg(feature = "scroll")]
-fn block_1tx_trace() -> BlockTrace {
+/// block_1tx_trace
+pub fn block_1tx_trace() -> BlockTrace {
     block_1tx_ctx().l2_trace().clone()
 }
 
-pub(crate) fn block_1tx() -> GethData {
+/// block_1tx
+pub fn block_1tx() -> GethData {
     block_1tx_ctx().into()
 }
 

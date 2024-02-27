@@ -29,11 +29,11 @@ use eth_types::{
     sign_types::{pk_bytes_le, pk_bytes_swap_endianness, SignData},
     Field,
 };
-use halo2_base::{
-    gates::{range::RangeConfig, GateInstructions, RangeInstructions},
-    utils::modulus,
-    AssignedValue, Context, QuantumCell, SKIP_FIRST_PASS,
-};
+// use halo2_base::{
+//     gates::{range::RangeConfig, GateInstructions, RangeInstructions},
+//     utils::modulus,
+//     AssignedValue, Context, QuantumCell, SKIP_FIRST_PASS,
+// };
 use halo2_ecc::{
     bigint::CRTInteger,
     ecc::EccChip,

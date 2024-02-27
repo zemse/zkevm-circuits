@@ -50,8 +50,8 @@
 //!   - [x] Tx Circuit
 //!   - [ ] MPT Circuit
 pub(crate) mod precompile_block_trace;
-#[cfg(any(feature = "test", test))]
-pub(crate) mod test;
+/// #[cfg(any(feature = "test", test))]
+pub mod test;
 
 #[cfg(feature = "poseidon-codehash")]
 use crate::bytecode_circuit::circuit::to_poseidon_hash::{
@@ -62,7 +62,7 @@ use crate::bytecode_circuit::circuit::BytecodeCircuitConfig;
 use crate::{
     bytecode_circuit::circuit::{BytecodeCircuit, BytecodeCircuitConfigArgs},
     copy_circuit::{CopyCircuit, CopyCircuitConfig, CopyCircuitConfigArgs},
-    ecc_circuit::{EccCircuit, EccCircuitConfig, EccCircuitConfigArgs},
+    // ecc_circuit::{EccCircuit, EccCircuitConfig, EccCircuitConfigArgs},
     evm_circuit::{EvmCircuit, EvmCircuitConfig, EvmCircuitConfigArgs},
     exp_circuit::{ExpCircuit, ExpCircuitArgs, ExpCircuitConfig},
     keccak_circuit::{
@@ -77,7 +77,7 @@ use crate::{
         CircuitConfig as SHA256CircuitConfig, CircuitConfigArgs as SHA256CircuitConfigArgs,
         SHA256Circuit,
     },
-    sig_circuit::{SigCircuit, SigCircuitConfig, SigCircuitConfigArgs},
+    // sig_circuit::{SigCircuit, SigCircuitConfig, SigCircuitConfigArgs},
     state_circuit::{StateCircuit, StateCircuitConfig, StateCircuitConfigArgs},
     table::{
         BlockTable, BytecodeTable, CopyTable, EccTable, ExpTable, KeccakTable, ModExpTable,
@@ -103,13 +103,13 @@ use halo2_proofs::{
     plonk::{Circuit, ConstraintSystem, Error},
 };
 use itertools::Itertools;
-use snark_verifier_sdk::CircuitExt;
+// use snark_verifier_sdk::CircuitExt;
 
 /// Configuration of the Super Circuit
 #[derive(Clone)]
 pub struct SuperCircuitConfig<F: Field> {
     block_table: BlockTable,
-    mpt_table: MptTable,
+    // mpt_table: MptTable,
     rlp_table: RlpTable,
     tx_table: TxTable,
     poseidon_table: PoseidonTable,
@@ -118,9 +118,9 @@ pub struct SuperCircuitConfig<F: Field> {
     evm_circuit: EvmCircuitConfig<F>,
     state_circuit: StateCircuitConfig<F>,
     tx_circuit: TxCircuitConfig<F>,
-    sig_circuit: SigCircuitConfig<F>,
+    // sig_circuit: SigCircuitConfig<F>,
     modexp_circuit: ModExpCircuitConfig,
-    ecc_circuit: EccCircuitConfig<F>,
+    // ecc_circuit: EccCircuitConfig<F>,
     sha256_circuit: SHA256CircuitConfig,
     #[cfg(not(feature = "poseidon-codehash"))]
     bytecode_circuit: BytecodeCircuitConfig<F>,
@@ -132,9 +132,9 @@ pub struct SuperCircuitConfig<F: Field> {
     pi_circuit: PiCircuitConfig<F>,
     exp_circuit: ExpCircuitConfig<F>,
     rlp_circuit: RlpCircuitConfig<F>,
-    /// Mpt Circuit
-    #[cfg(feature = "zktrie")]
-    mpt_circuit: MptCircuitConfig<F>,
+    // /// Mpt Circuit
+    // #[cfg(feature = "zktrie")]
+    // mpt_circuit: MptCircuitConfig<F>,
 }
 
 /// Circuit configuration arguments
@@ -175,7 +175,7 @@ impl SubCircuitConfig<Fr> for SuperCircuitConfig<Fr> {
         let rw_table = RwTable::construct(meta);
         log_circuit_info(meta, "rw table");
 
-        let mpt_table = MptTable::construct(meta);
+        // let mpt_table = MptTable::construct(meta);
         log_circuit_info(meta, "mpt table");
         let poseidon_table = PoseidonTable::construct(meta);
         log_circuit_info(meta, "poseidon table");
@@ -306,17 +306,17 @@ impl SubCircuitConfig<Fr> for SuperCircuitConfig<Fr> {
         );
         log_circuit_info(meta, "copy circuit");
 
-        #[cfg(feature = "zktrie")]
-        let mpt_circuit = MptCircuitConfig::new(
-            meta,
-            MptCircuitConfigArgs {
-                poseidon_table,
-                mpt_table,
-                challenges,
-            },
-        );
-        #[cfg(feature = "zktrie")]
-        log_circuit_info(meta, "zktrie circuit");
+        // #[cfg(feature = "zktrie")]
+        // let mpt_circuit = MptCircuitConfig::new(
+        //     meta,
+        //     MptCircuitConfigArgs {
+        //         poseidon_table,
+        //         mpt_table,
+        //         challenges,
+        //     },
+        // );
+        // #[cfg(feature = "zktrie")]
+        // log_circuit_info(meta, "zktrie circuit");
 
         let modexp_circuit = ModExpCircuitConfig::new(meta, modexp_table);
         log_circuit_info(meta, "modexp circuit");
@@ -324,7 +324,7 @@ impl SubCircuitConfig<Fr> for SuperCircuitConfig<Fr> {
             meta,
             StateCircuitConfigArgs {
                 rw_table,
-                mpt_table,
+                // mpt_table,
                 challenges: challenges_expr.clone(),
             },
         );
@@ -362,24 +362,24 @@ impl SubCircuitConfig<Fr> for SuperCircuitConfig<Fr> {
         // Sig Circuit and ECC Circuit use halo2-lib's vertifcal assignments gates
         // and need to be configured after Circuits with higher counts of unique rotation queries
         // (ex. Keccak, EVM) to avoid assigning advice values into blinding area.
-        let sig_circuit = SigCircuitConfig::new(
-            meta,
-            SigCircuitConfigArgs {
-                keccak_table,
-                sig_table,
-                challenges: challenges_expr.clone(),
-            },
-        );
-        log_circuit_info(meta, "sig circuit");
+        // let sig_circuit = SigCircuitConfig::new(
+        //     meta,
+        //     SigCircuitConfigArgs {
+        //         keccak_table,
+        //         sig_table,
+        //         challenges: challenges_expr.clone(),
+        //     },
+        // );
+        // log_circuit_info(meta, "sig circuit");
 
-        let ecc_circuit = EccCircuitConfig::new(
-            meta,
-            EccCircuitConfigArgs {
-                ecc_table,
-                challenges: challenges_expr,
-            },
-        );
-        log_circuit_info(meta, "ecc circuit");
+        // let ecc_circuit = EccCircuitConfig::new(
+        //     meta,
+        //     EccCircuitConfigArgs {
+        //         ecc_table,
+        //         challenges: challenges_expr,
+        //     },
+        // );
+        // log_circuit_info(meta, "ecc circuit");
 
         #[cfg(feature = "onephase")]
         if meta.max_phase() != 0 {
@@ -388,7 +388,7 @@ impl SubCircuitConfig<Fr> for SuperCircuitConfig<Fr> {
 
         SuperCircuitConfig {
             block_table,
-            mpt_table,
+            // mpt_table,
             tx_table,
             rlp_table,
             poseidon_table,
@@ -405,11 +405,11 @@ impl SubCircuitConfig<Fr> for SuperCircuitConfig<Fr> {
             rlp_circuit,
             tx_circuit,
             exp_circuit,
-            sig_circuit,
+            // sig_circuit,
             modexp_circuit,
-            ecc_circuit,
-            #[cfg(feature = "zktrie")]
-            mpt_circuit,
+            // ecc_circuit,
+            // #[cfg(feature = "zktrie")]
+            // mpt_circuit,
         }
     }
 }
@@ -456,11 +456,11 @@ pub struct SuperCircuit<
     /// Poseidon hash Circuit
     pub poseidon_circuit: PoseidonCircuit<F>,
     /// Sig Circuit
-    pub sig_circuit: SigCircuit<F>,
+    // pub sig_circuit: SigCircuit<F>,
     /// Modexp Circuit
     pub modexp_circuit: ModExpCircuit<F>,
     /// Ecc Circuit
-    pub ecc_circuit: EccCircuit<F, 9>,
+    // pub ecc_circuit: EccCircuit<F, 9>,
     /// Rlp Circuit
     pub rlp_circuit: RlpCircuit<F, Transaction>,
     /// Mpt Circuit
@@ -520,10 +520,10 @@ impl<
         push("pi", pi);
         let poseidon = PoseidonCircuit::min_num_rows_block(block);
         push("poseidon", poseidon);
-        let sig = SigCircuit::min_num_rows_block(block);
-        push("sig", sig);
-        let ecc = EccCircuit::<Fr, 9>::min_num_rows_block(block);
-        push("ecc", ecc);
+        // let sig = SigCircuit::min_num_rows_block(block);
+        // push("sig", sig);
+        // let ecc = EccCircuit::<Fr, 9>::min_num_rows_block(block);
+        // push("ecc", ecc);
         #[cfg(feature = "zktrie")]
         {
             let mpt = MptCircuit::<Fr>::min_num_rows_block(block);
@@ -592,8 +592,8 @@ impl<
         let sha256_circuit = SHA256Circuit::new_from_block(block);
         let poseidon_circuit = PoseidonCircuit::new_from_block(block);
         let rlp_circuit = RlpCircuit::new_from_block(block);
-        let sig_circuit = SigCircuit::new_from_block(block);
-        let ecc_circuit = EccCircuit::new_from_block(block);
+        // let sig_circuit = SigCircuit::new_from_block(block);
+        // let ecc_circuit = EccCircuit::new_from_block(block);
         #[cfg(feature = "zktrie")]
         let mpt_circuit = MptCircuit::new_from_block(block);
         SuperCircuit::<Fr, MAX_TXS, MAX_CALLDATA, MAX_INNER_BLOCKS, MOCK_RANDOMNESS> {
@@ -608,9 +608,9 @@ impl<
             sha256_circuit,
             poseidon_circuit,
             rlp_circuit,
-            sig_circuit,
+            // sig_circuit,
             modexp_circuit,
-            ecc_circuit,
+            // ecc_circuit,
             #[cfg(feature = "zktrie")]
             mpt_circuit,
             circuit_params: block.circuits_params,
@@ -676,12 +676,12 @@ impl<
         log::debug!("assigning tx_circuit");
         self.tx_circuit
             .synthesize_sub(&config.tx_circuit, challenges, layouter)?;
-        log::debug!("assigning sig_circuit");
-        self.sig_circuit
-            .synthesize_sub(&config.sig_circuit, challenges, layouter)?;
-        log::debug!("assigning ecc_circuit");
-        self.ecc_circuit
-            .synthesize_sub(&config.ecc_circuit, challenges, layouter)?;
+        // log::debug!("assigning sig_circuit");
+        // self.sig_circuit
+        //     .synthesize_sub(&config.sig_circuit, challenges, layouter)?;
+        // log::debug!("assigning ecc_circuit");
+        // self.ecc_circuit
+        //     .synthesize_sub(&config.ecc_circuit, challenges, layouter)?;
         log::debug!("assigning modexp_circuit");
         self.modexp_circuit
             .synthesize_sub(&config.modexp_circuit, challenges, layouter)?;
@@ -711,12 +711,12 @@ impl<
             .synthesize_sub(&config.rlp_circuit, challenges, layouter)?;
 
         // load both poseidon table and zktrie table
-        #[cfg(feature = "zktrie")]
-        {
-            log::debug!("assigning mpt_circuit");
-            self.mpt_circuit
-                .synthesize_sub(&config.mpt_circuit, challenges, layouter)?;
-        }
+        // #[cfg(feature = "zktrie")]
+        // {
+        //     log::debug!("assigning mpt_circuit");
+        //     self.mpt_circuit
+        //         .synthesize_sub(&config.mpt_circuit, challenges, layouter)?;
+        // }
 
         log::debug!("super circuit synthesize_sub done");
         Ok(())
@@ -779,17 +779,45 @@ impl<
         const MAX_CALLDATA: usize,
         const MAX_INNER_BLOCKS: usize,
         const MOCK_RANDOMNESS: u64,
-    > CircuitExt<Fr>
-    for SuperCircuit<Fr, MAX_TXS, MAX_CALLDATA, MAX_INNER_BLOCKS, MOCK_RANDOMNESS>
+    > SuperCircuit<Fr, MAX_TXS, MAX_CALLDATA, MAX_INNER_BLOCKS, MOCK_RANDOMNESS>
 {
-    fn num_instance(&self) -> Vec<usize> {
-        self.instances().iter().map(|l| l.len()).collect_vec()
-    }
+    /// doc
+    pub fn synthesize_2(
+        &self,
+        (config, challenges): <SuperCircuit<
+            Fr,
+            MAX_TXS,
+            MAX_CALLDATA,
+            MAX_INNER_BLOCKS,
+            MOCK_RANDOMNESS,
+        > as halo2_proofs::plonk::Circuit<Fr>>::Config,
+        layouter: &mut impl Layouter<Fr>,
+    ) -> Result<(), Error> {
+        let challenges = challenges.values(layouter);
 
-    fn instances(&self) -> Vec<Vec<Fr>> {
-        self.instance()
+        config.u8_table.load(layouter)?;
+        config.u16_table.load(layouter)?;
+
+        self.synthesize_sub(&config, &challenges, layouter)
     }
 }
+
+// impl<
+//         const MAX_TXS: usize,
+//         const MAX_CALLDATA: usize,
+//         const MAX_INNER_BLOCKS: usize,
+//         const MOCK_RANDOMNESS: u64,
+//     > CircuitExt<F>
+//     for SuperCircuit<Fr, MAX_TXS, MAX_CALLDATA, MAX_INNER_BLOCKS, MOCK_RANDOMNESS>
+// {
+//     fn num_instance(&self) -> Vec<usize> {
+//         self.instances().iter().map(|l| l.len()).collect_vec()
+//     }
+
+//     fn instances(&self) -> Vec<Vec<F>> {
+//         self.instance()
+//     }
+// }
 
 impl<
         const MAX_TXS: usize,

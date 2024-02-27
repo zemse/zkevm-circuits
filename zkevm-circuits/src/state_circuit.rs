@@ -75,7 +75,7 @@ pub struct StateCircuitConfig<F> {
     lookups: LookupsConfig,
     power_of_randomness: [Expression<F>; N_BYTES_WORD - 1],
     // External tables
-    mpt_table: MptTable,
+    // mpt_table: MptTable,
 }
 
 /// Circuit configuration arguments
@@ -83,7 +83,7 @@ pub struct StateCircuitConfigArgs<F: Field> {
     /// RwTable
     pub rw_table: RwTable,
     /// MptTable
-    pub mpt_table: MptTable,
+    // pub mpt_table: MptTable,
     /// Challenges
     pub challenges: Challenges<Expression<F>>,
 }
@@ -105,7 +105,7 @@ impl<F: Field> SubCircuitConfig<F> for StateCircuitConfig<F> {
         meta: &mut ConstraintSystem<F>,
         Self::ConfigArgs {
             rw_table,
-            mpt_table,
+            // mpt_table,
             challenges,
         }: Self::ConfigArgs,
     ) -> Self {
@@ -169,7 +169,7 @@ impl<F: Field> SubCircuitConfig<F> for StateCircuitConfig<F> {
 
         // annotate columns
         rw_table.annotate_columns(meta);
-        mpt_table.annotate_columns(meta);
+        // mpt_table.annotate_columns(meta);
 
         let config = Self {
             selector,
@@ -183,7 +183,7 @@ impl<F: Field> SubCircuitConfig<F> for StateCircuitConfig<F> {
             lookups,
             power_of_randomness,
             rw_table,
-            mpt_table,
+            // mpt_table,
         };
 
         let mut constraint_builder = ConstraintBuilder::new();
@@ -821,7 +821,7 @@ impl<F: Field> StateCircuitConfig<F> {
 
     fn annotate_circuit_in_region(&self, region: &mut Region<F>) {
         self.rw_table.annotate_columns_in_region(region);
-        self.mpt_table.annotate_columns_in_region(region);
+        // self.mpt_table.annotate_columns_in_region(region);
         self.is_non_exist
             .annotate_columns_in_region(region, "STATE");
         self.lexicographic_ordering
@@ -1056,16 +1056,16 @@ fn queries<F: Field>(meta: &mut VirtualCells<'_, F>, c: &StateCircuitConfig<F>) 
             value_prev: meta.query_advice(c.rw_table.value, Rotation::prev()),
             value_prev_column: meta.query_advice(c.rw_table.value_prev, Rotation::cur()),
         },
-        mpt_update_table: MptUpdateTableQueries {
-            q_enable: meta.query_fixed(c.mpt_table.q_enable, Rotation::cur()),
-            address: meta.query_advice(c.mpt_table.address, Rotation::cur()),
-            storage_key: meta.query_advice(c.mpt_table.storage_key, Rotation::cur()),
-            proof_type: meta.query_advice(c.mpt_table.proof_type, Rotation::cur()),
-            new_root: meta.query_advice(c.mpt_table.new_root, Rotation::cur()),
-            old_root: meta.query_advice(c.mpt_table.old_root, Rotation::cur()),
-            new_value: meta.query_advice(c.mpt_table.new_value, Rotation::cur()),
-            old_value: meta.query_advice(c.mpt_table.old_value, Rotation::cur()),
-        },
+        // mpt_update_table: MptUpdateTableQueries {
+        //     q_enable: meta.query_fixed(c.mpt_table.q_enable, Rotation::cur()),
+        //     address: meta.query_advice(c.mpt_table.address, Rotation::cur()),
+        //     storage_key: meta.query_advice(c.mpt_table.storage_key, Rotation::cur()),
+        //     proof_type: meta.query_advice(c.mpt_table.proof_type, Rotation::cur()),
+        //     new_root: meta.query_advice(c.mpt_table.new_root, Rotation::cur()),
+        //     old_root: meta.query_advice(c.mpt_table.old_root, Rotation::cur()),
+        //     new_value: meta.query_advice(c.mpt_table.new_value, Rotation::cur()),
+        //     old_value: meta.query_advice(c.mpt_table.old_value, Rotation::cur()),
+        // },
         lexicographic_ordering_selector: meta
             .query_fixed(c.lexicographic_ordering.selector, Rotation::cur()),
         rw_counter: MpiQueries::new(meta, c.sort_keys.rw_counter),

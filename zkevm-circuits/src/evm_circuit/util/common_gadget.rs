@@ -109,7 +109,7 @@ impl<F: Field> SameContextGadget<F> {
 
 /// Construction of step state transition that restores caller's state.
 #[derive(Clone, Debug)]
-pub(crate) struct RestoreContextGadget<F> {
+pub struct RestoreContextGadget<F> {
     caller_id: Cell<F>,
     caller_is_root: Cell<F>,
     caller_is_create: Cell<F>,

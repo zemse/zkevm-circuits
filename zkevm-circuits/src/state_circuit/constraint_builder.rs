@@ -46,7 +46,7 @@ pub struct MptUpdateTableQueries<F: Field> {
 pub struct Queries<F: Field> {
     pub selector: Expression<F>,
     pub rw_table: RwTableQueries<F>,
-    pub mpt_update_table: MptUpdateTableQueries<F>,
+    // pub mpt_update_table: MptUpdateTableQueries<F>,
     pub lexicographic_ordering_selector: Expression<F>,
     pub rw_counter: MpiQueries<F, N_LIMBS_RW_COUNTER>,
     pub tag_bits: [Expression<F>; 4],
@@ -303,27 +303,27 @@ impl<F: Field> ConstraintBuilder<F> {
         );
 
         // ref. spec 4.1. MPT lookup for last access to (address, storage_key)
-        self.condition(q.last_access(), |cb| {
-            cb.add_lookup(
-                "mpt_update exists in mpt circuit for AccountStorage last access",
-                vec![
-                    (1.expr(), q.mpt_update_table.q_enable.clone()),
-                    (
-                        q.rw_table.address.clone(),
-                        q.mpt_update_table.address.clone(),
-                    ),
-                    (
-                        q.rw_table.storage_key.clone(),
-                        q.mpt_update_table.storage_key.clone(),
-                    ),
-                    (q.mpt_proof_type(), q.mpt_update_table.proof_type.clone()),
-                    (q.state_root(), q.mpt_update_table.new_root.clone()),
-                    (q.state_root_prev(), q.mpt_update_table.old_root.clone()),
-                    (q.value(), q.mpt_update_table.new_value.clone()),
-                    (q.initial_value(), q.mpt_update_table.old_value.clone()),
-                ],
-            );
-        });
+        // self.condition(q.last_access(), |cb| {
+        //     cb.add_lookup(
+        //         "mpt_update exists in mpt circuit for AccountStorage last access",
+        //         vec![
+        //             (1.expr(), q.mpt_update_table.q_enable.clone()),
+        //             (
+        //                 q.rw_table.address.clone(),
+        //                 q.mpt_update_table.address.clone(),
+        //             ),
+        //             (
+        //                 q.rw_table.storage_key.clone(),
+        //                 q.mpt_update_table.storage_key.clone(),
+        //             ),
+        //             (q.mpt_proof_type(), q.mpt_update_table.proof_type.clone()),
+        //             (q.state_root(), q.mpt_update_table.new_root.clone()),
+        //             (q.state_root_prev(), q.mpt_update_table.old_root.clone()),
+        //             (q.value(), q.mpt_update_table.new_value.clone()),
+        //             (q.initial_value(), q.mpt_update_table.old_value.clone()),
+        //         ],
+        //     );
+        // });
 
         self.condition(q.not_first_access.clone(), |cb| {
             cb.require_equal(
@@ -436,27 +436,27 @@ impl<F: Field> ConstraintBuilder<F> {
         );
 
         // last_access degree = 1
-        self.condition(q.last_access(), |cb| {
-            cb.add_lookup(
-                "mpt_update exists in mpt circuit for Account last access",
-                vec![
-                    (1.expr(), q.mpt_update_table.q_enable.clone()),
-                    (
-                        q.rw_table.address.clone(),
-                        q.mpt_update_table.address.clone(),
-                    ),
-                    (
-                        q.rw_table.storage_key.clone(),
-                        q.mpt_update_table.storage_key.clone(),
-                    ),
-                    (q.mpt_proof_type(), q.mpt_update_table.proof_type.clone()),
-                    (q.state_root(), q.mpt_update_table.new_root.clone()),
-                    (q.state_root_prev(), q.mpt_update_table.old_root.clone()),
-                    (q.value(), q.mpt_update_table.new_value.clone()),
-                    (q.initial_value(), q.mpt_update_table.old_value.clone()),
-                ],
-            );
-        });
+        // self.condition(q.last_access(), |cb| {
+        //     cb.add_lookup(
+        //         "mpt_update exists in mpt circuit for Account last access",
+        //         vec![
+        //             (1.expr(), q.mpt_update_table.q_enable.clone()),
+        //             (
+        //                 q.rw_table.address.clone(),
+        //                 q.mpt_update_table.address.clone(),
+        //             ),
+        //             (
+        //                 q.rw_table.storage_key.clone(),
+        //                 q.mpt_update_table.storage_key.clone(),
+        //             ),
+        //             (q.mpt_proof_type(), q.mpt_update_table.proof_type.clone()),
+        //             (q.state_root(), q.mpt_update_table.new_root.clone()),
+        //             (q.state_root_prev(), q.mpt_update_table.old_root.clone()),
+        //             (q.value(), q.mpt_update_table.new_value.clone()),
+        //             (q.initial_value(), q.mpt_update_table.old_value.clone()),
+        //         ],
+        //     );
+        // });
 
         self.condition(q.not_first_access.clone(), |cb| {
             cb.require_equal(

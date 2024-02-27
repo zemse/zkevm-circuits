@@ -13,8 +13,8 @@ eth-types = { path = "../eth-types" }
 mpt-zktrie = { path = "../zktrie" }
 zkevm-circuits = { path = "../zkevm-circuits", default-features = false }
 
-snark-verifier.workspace = true
-snark-verifier-sdk.workspace = true
+# snark-verifier.workspace = true
+# snark-verifier-sdk.workspace = true
 
 anyhow.workspace = true
 base64 = "0.13.0"

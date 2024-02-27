@@ -29,11 +29,14 @@ use gadgets::{
 };
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, Region, Value},
-    halo2curves::bn256::{Fq, G1Affine},
+    halo2curves::{
+        bn256::{Fq, G1Affine},
+        group::prime::PrimeCurveAffine,
+    },
     plonk::{Advice, Any, Column, ConstraintSystem, Error, Expression, Fixed, VirtualCells},
     poly::Rotation,
 };
-use snark_verifier::util::arithmetic::PrimeCurveAffine;
+// use snark_verifier::util::arithmetic::PrimeCurveAffine;
 
 use std::iter::repeat;
 

@@ -18,8 +18,8 @@ ff.workspace = true
 gadgets = { path = "../gadgets" }
 ethers-core.workspace = true
 ethers-signers = { workspace = true, optional = true }
-halo2-base.workspace = true
-halo2-ecc.workspace = true
+# halo2-base.workspace = true
+# halo2-ecc.workspace = true
 mock = { path = "../mock", optional = true }
 strum.workspace = true
 strum_macros.workspace = true
@@ -35,13 +35,15 @@ serde_json.workspace = true
 
 hash-circuit.workspace = true
 misc-precompiled-circuit = { package = "misc-precompiled-circuit", git = "https://github.com/scroll-tech/misc-precompiled-circuit.git", branch = "main" }
-halo2_gadgets = { git = "https://github.com/scroll-tech/halo2.git", branch = "v1.1", features = ["unstable"] }
+# halo2_gadgets = { git = "https://github.com/scroll-tech/halo2.git", branch = "v1.1", features = ["unstable"] }
+# halo2_gadgets = { path = "../../scroll-halo2/halo2_gadgets", features = ["unstable"] }
+halo2_gadgets = { git = "https://github.com/zemse/halo2.git", branch = "scroll-static-call", features = ["unstable"] }
 
 num-bigint.workspace = true
 subtle.workspace = true
 rand_chacha.workspace = true
-snark-verifier.workspace = true
-snark-verifier-sdk.workspace = true
+# snark-verifier.workspace = true
+# snark-verifier-sdk.workspace = true
 hex.workspace = true
 rayon.workspace = true
 
@@ -55,7 +57,7 @@ cli-table = "0.4"
 paste = "1.0"
 
 [features]
-default = ["test", "test-circuits", "shanghai", "debug-annotations", "parallel_syn", "enable-storage"]
+default = ["test", "test-circuits", "shanghai", "debug-annotations", "parallel_syn", "enable-storage", "circuit-params", "scroll"]
 test = ["ethers-signers", "mock", "bus-mapping/test"]
 
 scroll = ["bus-mapping/scroll", "eth-types/scroll", "mock?/scroll", "zktrie", "poseidon-codehash"]
@@ -68,7 +70,7 @@ onephase = [] # debug only
 zktrie = []
 poseidon-codehash = []
 parallel_syn = ["hash-circuit/parallel_syn", "halo2_proofs/parallel_syn"]
-
+circuit-params = []
 debug-annotations = []
 enable-stack = ["bus-mapping/enable-stack"]
 enable-memory = ["bus-mapping/enable-memory"]
