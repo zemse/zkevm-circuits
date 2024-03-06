@@ -290,7 +290,7 @@ impl TxTable {
                 || format!("tx table q_enable row {offset}"),
                 q_enable,
                 offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
             region.assign_fixed(
                 || format!("tx table {msg} row {offset}"),
@@ -313,7 +313,7 @@ impl TxTable {
                     self.q_enable,
                     &advice_columns,
                     &self.tag,
-                    &[(); 5].map(|_| Value::known(F::zero())),
+                    &[(); 5].map(|_| Value::known(F::ZERO)),
                     "all-zero",
                 )?;
                 offset += 1;
@@ -669,7 +669,7 @@ impl RwTable {
             || "assign rw row on rw table",
             self.q_enable,
             offset,
-            || Value::known(F::one()),
+            || Value::known(F::ONE),
         )?;
         for (column, value) in [
             (self.rw_counter, row.rw_counter),
@@ -820,7 +820,7 @@ impl MptTable {
             || "assign mpt table row value",
             self.q_enable,
             offset,
-            || Value::known(F::one()),
+            || Value::known(F::ONE),
         )?;
         let mpt_table_columns = <MptTable as LookupTable<F>>::advice_columns(self);
         for (column, value) in mpt_table_columns.iter().zip_eq(row.values()) {
@@ -979,7 +979,7 @@ impl PoseidonTable {
         layouter.assign_region(
             || "poseidon table",
             |mut region| {
-                self.assign(&mut region, 0, [Value::known(F::zero()); 6])?;
+                self.assign(&mut region, 0, [Value::known(F::ZERO); 6])?;
                 for (offset, row) in hashes.iter().enumerate() {
                     self.assign(&mut region, offset + 1, *row)?;
                 }
@@ -1012,14 +1012,14 @@ impl PoseidonTable {
                     || "poseidon table all-zero row",
                     self.q_enable,
                     offset,
-                    || Value::known(F::zero()),
+                    || Value::known(F::ZERO),
                 )?;
                 for column in poseidon_table_columns.iter().copied() {
                     region.assign_advice(
                         || "poseidon table all-zero row",
                         column,
                         offset,
-                        || Value::known(F::zero()),
+                        || Value::known(F::ZERO),
                     )?;
                 }
                 offset += 1;
@@ -1029,12 +1029,12 @@ impl PoseidonTable {
                 //     || "poseidon table nil input row",
                 //     self.q_enable,
                 //     offset,
-                //     || Value::known(F::one()),
+                //     || Value::known(F::ONE),
                 // )?;
                 // for (column, value) in poseidon_table_columns
                 //     .iter()
                 //     .copied()
-                //     .zip(once(nil_hash).chain(repeat(Value::known(F::zero()))))
+                //     .zip(once(nil_hash).chain(repeat(Value::known(F::ZERO))))
                 // {
                 //     region.assign_advice(
                 //         || "poseidon table nil input row",
@@ -1069,17 +1069,17 @@ impl PoseidonTable {
                             || format!("poseidon table row {offset}"),
                             self.q_enable,
                             offset,
-                            || Value::known(F::one()),
+                            || Value::known(F::ONE),
                         )?;
                         for (column, value) in poseidon_table_columns.iter().zip_eq(
                             once(ref_hash)
                                 .chain(row.map(Value::known))
                                 .chain(once(Value::known(control_len_as_flag)))
-                                .chain(once(Value::known(F::zero()))) // always use domain 0 in codehash
+                                .chain(once(Value::known(F::ZERO))) // always use domain 0 in codehash
                                 .chain(once(Value::known(if first_row {
-                                    F::one()
+                                    F::ONE
                                 } else {
-                                    F::zero()
+                                    F::ZERO
                                 }))),
                         ) {
                             region.assign_advice(
@@ -1119,7 +1119,7 @@ impl PoseidonTable {
             || "assign poseidon table row value",
             self.q_enable,
             offset,
-            || Value::known(F::one()),
+            || Value::known(F::ONE),
         )?;
         let poseidon_table_columns = <PoseidonTable as LookupTable<F>>::advice_columns(self);
         for (column, value) in poseidon_table_columns.iter().zip_eq(row) {
@@ -1201,7 +1201,7 @@ impl BytecodeTable {
                             || format!("bytecode table row {offset}"),
                             self.q_enable,
                             offset,
-                            || Value::known(F::one()),
+                            || Value::known(F::ONE),
                         )?;
                         for (&column, value) in bytecode_table_columns.iter().zip_eq(row) {
                             region.assign_advice(
@@ -1346,7 +1346,7 @@ impl BlockTable {
                         || "block table all-zero row",
                         *column,
                         offset,
-                        || Value::known(F::zero()),
+                        || Value::known(F::ZERO),
                     )?;
                 }
                 offset += 1;
@@ -1467,7 +1467,7 @@ impl KeccakTable {
         });
 
         vec![[
-            Value::known(F::one()),
+            Value::known(F::ONE),
             input_rlc,
             Value::known(input_len),
             output_rlc,
@@ -1514,13 +1514,13 @@ impl KeccakTable {
                         || "keccak table all-zero row",
                         self.q_enable,
                         offset,
-                        || Value::known(F::one()),
+                        || Value::known(F::ONE),
                     )?;
                     region.assign_advice(
                         || "keccak table all-zero row",
                         column,
                         offset,
-                        || Value::known(F::zero()),
+                        || Value::known(F::ZERO),
                     )?;
                 }
                 offset += 1;
@@ -1532,7 +1532,7 @@ impl KeccakTable {
                             || format!("keccak table row {offset}"),
                             self.q_enable,
                             offset,
-                            || Value::known(F::one()),
+                            || Value::known(F::ONE),
                         )?;
                         for (&column, value) in keccak_table_columns.iter().zip_eq(row) {
                             region.assign_advice(
@@ -1630,7 +1630,7 @@ impl SHA256Table {
             .keccak_input()
             .map(|challenge| rlc::value(&Word::from_big_endian(output).to_le_bytes(), challenge));
 
-        vec![[Value::known(F::one()), input_rlc, input_len, output_rlc]]
+        vec![[Value::known(F::ONE), input_rlc, input_len, output_rlc]]
     }
 
     /// Provide this function for the case that we want to consume a sha256
@@ -1650,13 +1650,13 @@ impl SHA256Table {
                         || "sha256 table all-zero row",
                         self.q_enable,
                         offset,
-                        || Value::known(F::one()),
+                        || Value::known(F::ONE),
                     )?;
                     region.assign_advice(
                         || "sha256 table all-zero row",
                         column,
                         offset,
-                        || Value::known(F::zero()),
+                        || Value::known(F::ZERO),
                     )?;
                 }
                 offset += 1;
@@ -1668,7 +1668,7 @@ impl SHA256Table {
                             || format!("table row {offset}"),
                             self.q_enable,
                             offset,
-                            || Value::known(F::one()),
+                            || Value::known(F::ONE),
                         )?;
                         for (&column, value) in table_columns.iter().zip_eq(row) {
                             region.assign_advice(
@@ -1790,7 +1790,7 @@ impl CopyTable {
                 .keccak_input()
                 .map(|keccak_input| rlc::value(values.iter().rev(), keccak_input))
         } else {
-            Value::known(F::zero())
+            Value::known(F::ZERO)
         };
 
         let read_steps = copy_event.copy_bytes.bytes.iter();
@@ -1817,9 +1817,9 @@ impl CopyTable {
             addr: copy_event.src_addr,
             addr_end: copy_event.src_addr_end,
             bytes_left: copy_event.copy_length(),
-            value_acc: Value::known(F::zero()),
-            word_rlc: Value::known(F::zero()),
-            word_rlc_prev: Value::known(F::zero()),
+            value_acc: Value::known(F::ZERO),
+            word_rlc: Value::known(F::ZERO),
+            word_rlc_prev: Value::known(F::ZERO),
         };
 
         let mut writer = CopyThread {
@@ -1830,9 +1830,9 @@ impl CopyTable {
             addr: copy_event.dst_addr,
             addr_end: copy_event.dst_addr + copy_event.full_length(),
             bytes_left: reader.bytes_left,
-            value_acc: Value::known(F::zero()),
-            word_rlc: Value::known(F::zero()),
-            word_rlc_prev: Value::known(F::zero()),
+            value_acc: Value::known(F::ZERO),
+            word_rlc: Value::known(F::ZERO),
+            word_rlc_prev: Value::known(F::ZERO),
         };
 
         let is_access_list = copy_event.src_type == CopyDataType::AccessListAddresses
@@ -1889,11 +1889,7 @@ impl CopyTable {
             }
             .map(Value::known);
 
-            let value_or_pad = if is_pad {
-                Value::known(F::zero())
-            } else {
-                value
-            };
+            let value_or_pad = if is_pad { Value::known(F::ZERO) } else { value };
 
             if !copy_step.mask {
                 thread.front_mask = false;
@@ -1901,8 +1897,8 @@ impl CopyTable {
             }
             if (step_idx / 2) % 32 == 0 {
                 // reset
-                thread.word_rlc = Value::known(F::zero());
-                thread.word_rlc_prev = Value::known(F::zero());
+                thread.word_rlc = Value::known(F::ZERO);
+                thread.word_rlc_prev = Value::known(F::ZERO);
             }
             thread.word_rlc = thread.word_rlc * challenges.evm_word() + value;
             thread.word_rlc_prev = if is_read_step {
@@ -1994,14 +1990,14 @@ impl CopyTable {
                     || "copy table all-zero row",
                     self.q_enable,
                     offset,
-                    || Value::known(F::one()),
+                    || Value::known(F::ONE),
                 )?;
                 for column in <CopyTable as LookupTable<F>>::advice_columns(self) {
                     region.assign_advice(
                         || "copy table all-zero row",
                         column,
                         offset,
-                        || Value::known(F::zero()),
+                        || Value::known(F::ZERO),
                     )?;
                 }
                 offset += 1;
@@ -2014,7 +2010,7 @@ impl CopyTable {
                             || format!("q_enable at row: {offset}"),
                             self.q_enable,
                             offset,
-                            || Value::known(F::one()),
+                            || Value::known(F::ONE),
                         )?;
                         for (&column, (value, label)) in copy_table_columns.iter().zip_eq(row) {
                             region.assign_advice(
@@ -2122,9 +2118,9 @@ impl ExpTable {
         let mut exponent = exp_event.exponent;
         for (step_idx, exp_step) in exp_event.steps.iter().rev().enumerate() {
             let is_last = if step_idx == exp_event.steps.len() - 1 {
-                F::one()
+                F::ONE
             } else {
-                F::zero()
+                F::ZERO
             };
             let (exp_lo, exp_hi) = split_u256(&exp_step.d);
             let (exponent_lo, exponent_hi) = split_u256(&exponent);
@@ -2142,7 +2138,7 @@ impl ExpTable {
             ]);
             // row 2
             assignments.push([
-                F::zero(),
+                F::ZERO,
                 base_limbs[1].as_u64().into(),
                 exponent_hi
                     .to_scalar()
@@ -2152,21 +2148,11 @@ impl ExpTable {
                     .expect("exponentiation hi should fit to scalar"),
             ]);
             // row 3
-            assignments.push([
-                F::zero(),
-                base_limbs[2].as_u64().into(),
-                F::zero(),
-                F::zero(),
-            ]);
+            assignments.push([F::ZERO, base_limbs[2].as_u64().into(), F::ZERO, F::ZERO]);
             // row 4
-            assignments.push([
-                F::zero(),
-                base_limbs[3].as_u64().into(),
-                F::zero(),
-                F::zero(),
-            ]);
+            assignments.push([F::ZERO, base_limbs[3].as_u64().into(), F::ZERO, F::ZERO]);
             for _ in ROWS_PER_STEP..OFFSET_INCREMENT {
-                assignments.push([F::zero(), F::zero(), F::zero(), F::zero()]);
+                assignments.push([F::ZERO, F::ZERO, F::ZERO, F::ZERO]);
             }
 
             // update intermediate exponent.
@@ -2199,7 +2185,7 @@ impl ExpTable {
                             || format!("exponentiation table row {offset}"),
                             self.q_enable,
                             offset,
-                            || Value::known(F::one()),
+                            || Value::known(F::ONE),
                         )?;
                         for (&column, value) in exp_table_columns.iter().zip_eq(row) {
                             region.assign_advice(
@@ -2210,9 +2196,9 @@ impl ExpTable {
                             )?;
                         }
                         let is_step = if offset % OFFSET_INCREMENT == 0 {
-                            F::one()
+                            F::ONE
                         } else {
-                            F::zero()
+                            F::ZERO
                         };
                         region.assign_fixed(
                             || format!("exponentiation table row {offset}"),
@@ -2230,7 +2216,7 @@ impl ExpTable {
                     || format!("exponentiation table row {offset}"),
                     self.q_enable,
                     offset,
-                    || Value::known(F::one()),
+                    || Value::known(F::ONE),
                 )?;
                 for (column, value) in exp_table_columns.iter().zip_eq(row) {
                     region.assign_advice(
@@ -2400,7 +2386,7 @@ impl RlpFsmRlpTable {
             |mut region| {
                 for (i, row) in rows.iter().enumerate() {
                     let cells: Vec<(&'static str, Column<Any>, Value<F>)> = vec![
-                        ("q_enable", self.q_enable.into(), Value::known(F::one())),
+                        ("q_enable", self.q_enable.into(), Value::known(F::ONE)),
                         ("tx_id", self.tx_id.into(), Value::known(F::from(row.tx_id))),
                         (
                             "format",
@@ -2423,7 +2409,7 @@ impl RlpFsmRlpTable {
                             self.tag_length.into(),
                             Value::known(F::from(row.tag_length as u64)),
                         ),
-                        ("is_output", self.is_output.into(), Value::known(F::one())),
+                        ("is_output", self.is_output.into(), Value::known(F::ONE)),
                         (
                             "is_none",
                             self.is_none.into(),
@@ -2524,7 +2510,7 @@ impl SigTable {
                         || format!("sig table q_enable {offset}"),
                         self.q_enable,
                         offset,
-                        || Value::known(F::one()),
+                        || Value::known(F::ONE),
                     )?;
                     for (column_name, column, value) in [
                         ("msg_hash_rlc", self.msg_hash_rlc, msg_hash_rlc),
@@ -2715,7 +2701,7 @@ impl EccTable {
                 u256_to_value(add_op.p.1, keccak_rand),
                 u256_to_value(add_op.q.0, keccak_rand),
                 u256_to_value(add_op.q.1, keccak_rand),
-                Value::known(F::zero()),
+                Value::known(F::ZERO),
                 fq_to_value(add_op.r.unwrap_or(G1Affine::identity()).x, keccak_rand),
                 fq_to_value(add_op.r.unwrap_or(G1Affine::identity()).y, keccak_rand),
             ]);
@@ -2734,9 +2720,9 @@ impl EccTable {
                 u256_to_value(mul_op.p.0, keccak_rand),
                 u256_to_value(mul_op.p.1, keccak_rand),
                 // no need to RLC the scalar s, since it will fit within the scalar field.
-                Value::known(mul_op.s.into()),
-                Value::known(F::zero()),
-                Value::known(F::zero()),
+                Value::known(todo!()), // Value::known(mul_op.s.into()), // TODO
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
                 fq_to_value(mul_op.r.unwrap_or(G1Affine::identity()).x, keccak_rand),
                 fq_to_value(mul_op.r.unwrap_or(G1Affine::identity()).y, keccak_rand),
             ]);
@@ -2752,10 +2738,10 @@ impl EccTable {
             assignments.push([
                 Value::known(F::from(u64::from(PrecompileCalls::Bn128Pairing))),
                 Value::known(F::from(pairing_op.is_valid() as u64)),
-                Value::known(F::zero()),
-                Value::known(F::zero()),
-                Value::known(F::zero()),
-                Value::known(F::zero()),
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
                 keccak_rand.map(|r| rlc::value(pairing_op.to_bytes_be().iter().rev(), r)),
                 Value::known(
                     pairing_op
@@ -2763,7 +2749,7 @@ impl EccTable {
                         .to_scalar()
                         .expect("EcPairing output = {0, 1}"),
                 ),
-                Value::known(F::zero()),
+                Value::known(F::ZERO),
             ]);
         }
 
@@ -2838,7 +2824,7 @@ impl ModExpTable {
 
     /// helper for obtain the modulus of a U256 in Fr
     pub fn native_u256<F: Field>(word: &Word) -> F {
-        let minus1 = -F::one();
+        let minus1 = -F::ONE;
         let div = Word::from_little_endian(minus1.to_repr().as_ref()) + Word::from(1u64);
         let (_, remainder) = word.div_mod(div);
 
@@ -2858,14 +2844,14 @@ impl ModExpTable {
                         || "modexp table blank head row",
                         self.q_head,
                         i,
-                        || Value::known(F::zero()),
+                        || Value::known(F::ZERO),
                     )?;
                     for &col in [&self.base, &self.exp, &self.modulus, &self.result] {
                         region.assign_advice(
                             || "modexp table blank limb row",
                             col,
                             i,
-                            || Value::known(F::zero()),
+                            || Value::known(F::ZERO),
                         )?;
                     }
                 }
@@ -2891,7 +2877,7 @@ impl ModExpTable {
                             || format!("modexp table head {}", offset + i),
                             self.q_head,
                             offset + i,
-                            || Value::known(if i == 0 { F::one() } else { F::zero() }),
+                            || Value::known(if i == 0 { F::ONE } else { F::ZERO }),
                         )?;
                     }
 
@@ -3048,7 +3034,7 @@ impl PowOfRandTable {
             || "power of randomness table",
             |mut region| {
                 let pows_of_rand =
-                    std::iter::successors(Some(Value::known(F::one())), |&v| Some(v * r))
+                    std::iter::successors(Some(Value::known(F::ONE)), |&v| Some(v * r))
                         .take(N_PAIRING_PER_OP * N_BYTES_PER_PAIR);
 
                 for (idx, pow_of_rand) in pows_of_rand.enumerate() {
@@ -3056,13 +3042,13 @@ impl PowOfRandTable {
                         || format!("q_enable at offset = {idx}"),
                         self.q_enable,
                         idx,
-                        || Value::known(F::one()),
+                        || Value::known(F::ONE),
                     )?;
                     region.assign_fixed(
                         || format!("is_first at offset = {idx}"),
                         self.is_first,
                         idx,
-                        || Value::known(if idx == 0 { F::one() } else { F::zero() }),
+                        || Value::known(if idx == 0 { F::ONE } else { F::ZERO }),
                     )?;
                     region.assign_fixed(
                         || format!("exponent at offset = {idx}"),

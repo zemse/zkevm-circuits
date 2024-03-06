@@ -230,7 +230,7 @@ impl<F: Field, G: MathGadgetContainer<F>> Circuit<F> for UnitTestMathGadgetBaseC
         layouter.assign_region(
             || "fixed table",
             |mut region| {
-                for (offset, row) in std::iter::once([F::zero(); 4])
+                for (offset, row) in std::iter::once([F::ZERO; 4])
                     .chain(
                         FixedTableTag::iter()
                             .filter(|t| {

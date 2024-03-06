@@ -51,7 +51,7 @@ impl<F: Field> IsZeroGadget<F> {
     ) -> Result<F, Error> {
         let is_zero = value.is_zero_vartime();
         let inverse = if is_zero {
-            F::zero()
+            F::ZERO
         } else {
             value.invert().unwrap()
         };

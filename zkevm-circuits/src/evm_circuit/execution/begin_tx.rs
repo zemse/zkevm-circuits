@@ -1030,7 +1030,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
                 .assign(region, offset, precompile_call)?;
             (input_len as u64, input_bytes_rlc)
         } else {
-            (0, Value::known(F::zero()))
+            (0, Value::known(F::ZERO))
         };
 
         self.precompile_input_len.assign(
@@ -1145,7 +1145,7 @@ impl<F: Field> ExecutionGadget<F> for BeginTxGadget<F> {
             let keccak_code_hash_rlc = region.word_rlc(U256::from(keccak256(&tx.call_data)));
             (init_code_rlc, keccak_code_hash_rlc)
         } else {
-            (Value::known(F::zero()), Value::known(F::zero()))
+            (Value::known(F::ZERO), Value::known(F::ZERO))
         };
         self.init_code_rlc.assign(region, offset, init_code_rlc)?;
         self.keccak_code_hash

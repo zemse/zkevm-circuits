@@ -57,7 +57,7 @@ pub(crate) const LOOKUP_CONFIG: &[(Table, usize)] = &[
     (Table::Exp, EXP_TABLE_LOOKUPS),
     (Table::Sig, SIG_TABLE_LOOKUPS),
     (Table::ModExp, MODEXP_TABLE_LOOKUPS),
-    (Table::Ecc, ECC_TABLE_LOOKUPS),
+    // (Table::Ecc, ECC_TABLE_LOOKUPS),
     (Table::PowOfRand, POW_OF_RAND_TABLE_LOOKUPS),
 ];
 

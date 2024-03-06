@@ -77,7 +77,7 @@ impl<F: Field> PaddingGadget<F> {
             if let Some(required_input_len) = precompile.input_len() {
                 // skip padding if calldata length == 0.
                 if cd_len == 0 {
-                    (required_input_len as u64, input_rlc, Value::known(F::one()))
+                    (required_input_len as u64, input_rlc, Value::known(F::ONE))
                 } else {
                     // pad only if calldata length is less than the required input length.
                     let n_padded_zeroes = if cd_len < required_input_len as u64 {
@@ -95,7 +95,7 @@ impl<F: Field> PaddingGadget<F> {
                     )
                 }
             } else {
-                (cd_len, input_rlc, Value::known(F::one()))
+                (cd_len, input_rlc, Value::known(F::ONE))
             };
 
         self.is_cd_len_zero.assign(region, offset, cd_len.into())?;

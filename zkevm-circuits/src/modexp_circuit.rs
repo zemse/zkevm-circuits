@@ -81,7 +81,7 @@ impl ModExpCircuitConfig {
                 || format!("modexp table head {}", table_offset + i),
                 self.modexp_table.q_head,
                 table_offset + i,
-                || Value::known(if i == 0 { F::one() } else { F::zero() }),
+                || Value::known(if i == 0 { F::ONE } else { F::ZERO }),
             )?;
 
             ret.limbs[i]

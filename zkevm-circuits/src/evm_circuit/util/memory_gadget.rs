@@ -637,11 +637,7 @@ impl<F: Field> MemoryMask<F> {
             // If MSTORE8, the mask looks like this (example shift=4):
             //   11110111111111111111111111111111
             for i in 0..N_BYTES_WORD {
-                let mask = if i == shift as usize {
-                    F::zero()
-                } else {
-                    F::one()
-                };
+                let mask = if i == shift as usize { F::ZERO } else { F::ONE };
                 self.mask[i].assign(region, offset, Value::known(mask))?;
             }
         } else {
@@ -649,11 +645,7 @@ impl<F: Field> MemoryMask<F> {
             //   11110000000000000000000000000000
             // The first `shift` bits are 1, the rest are 0.
             for i in 0..N_BYTES_WORD {
-                let mask = if i < shift as usize {
-                    F::one()
-                } else {
-                    F::zero()
-                };
+                let mask = if i < shift as usize { F::ONE } else { F::ZERO };
                 self.mask[i].assign(region, offset, Value::known(mask))?;
             }
         }

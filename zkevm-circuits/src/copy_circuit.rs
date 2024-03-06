@@ -623,7 +623,7 @@ impl<F: Field> CopyCircuitConfig<F> {
                 || "q_enable",
                 self.q_enable,
                 *offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
 
             // is_last, value, is_pad
@@ -847,7 +847,7 @@ impl<F: Field> CopyCircuitConfig<F> {
             || format!("assign is_first {}", *offset),
             self.copy_table.is_first,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // is_last
         region.assign_advice(
@@ -861,77 +861,77 @@ impl<F: Field> CopyCircuitConfig<F> {
             || format!("assign id {}", *offset),
             self.copy_table.id,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // addr
         region.assign_advice(
             || format!("assign addr {}", *offset),
             self.copy_table.addr,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // src_addr_end
         region.assign_advice(
             || format!("assign src_addr_end {}", *offset),
             self.copy_table.src_addr_end,
             *offset,
-            || Value::known(F::one()),
+            || Value::known(F::ONE),
         )?;
         // real_bytes_left
         region.assign_advice(
             || format!("assign bytes_left {}", *offset),
             self.copy_table.real_bytes_left,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // value
         region.assign_advice(
             || format!("assign value {}", *offset),
             self.value,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // value_prev
         region.assign_advice(
             || format!("assign value_prev {}", *offset),
             self.value_prev,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // value_word_rlc
         region.assign_advice(
             || format!("assign value_word_rlc {}", *offset),
             self.value_word_rlc,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // value_word_rlc_prev
         region.assign_advice(
             || format!("assign value_word_rlc_prev {}", *offset),
             self.value_word_rlc_prev,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // word_index
         region.assign_advice(
             || format!("assign word_index {}", *offset),
             self.word_index,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // mask
         region.assign_advice(
             || format!("assign mask {}", *offset),
             self.mask,
             *offset,
-            || Value::known(F::one()),
+            || Value::known(F::ONE),
         )?;
         // front mask
         region.assign_advice(
             || format!("assign front mask {}", *offset),
             self.front_mask,
             *offset,
-            || Value::known(F::one()),
+            || Value::known(F::ONE),
         )?;
 
         // value_acc
@@ -939,28 +939,28 @@ impl<F: Field> CopyCircuitConfig<F> {
             || format!("assign value_acc {}", *offset),
             self.value_acc,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // rlc_acc
         region.assign_advice(
             || format!("assign rlc_acc {}", *offset),
             self.copy_table.rlc_acc,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // is_pad
         region.assign_advice(
             || format!("assign is_pad {}", *offset),
             self.is_pad,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // rw_counter
         region.assign_advice(
             || format!("assign rw_counter {}", *offset),
             self.copy_table.rw_counter,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
 
         // rwc_inc_left
@@ -968,28 +968,23 @@ impl<F: Field> CopyCircuitConfig<F> {
             || format!("assign rwc_inc_left {}", *offset),
             self.copy_table.rwc_inc_left,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         // tag
         tag_chip.assign(region, *offset, &CopyDataType::Padding)?;
         // Assign IsEqual gadgets
-        is_src_end_chip.assign(
-            region,
-            *offset,
-            Value::known(F::zero()),
-            Value::known(F::one()),
-        )?;
+        is_src_end_chip.assign(region, *offset, Value::known(F::ZERO), Value::known(F::ONE))?;
         lt_word_end_chip.assign(
             region,
             *offset,
-            Value::known(F::zero()),
+            Value::known(F::ZERO),
             Value::known(F::from(31u64)),
         )?;
         region.assign_advice(
             || format!("non_pad_non_mask at row: {offset}"),
             self.non_pad_non_mask,
             *offset,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
 
         for column in [
@@ -1004,7 +999,7 @@ impl<F: Field> CopyCircuitConfig<F> {
                 || format!("assigning padding row: {}", *offset),
                 column,
                 *offset,
-                || Value::known(F::zero()),
+                || Value::known(F::ZERO),
             )?;
         }
 
@@ -1128,7 +1123,7 @@ impl<F: Field> SubCircuit<F> for CopyCircuit<F> {
 }
 
 fn unwrap_value<F: Field>(value: Value<F>) -> F {
-    let mut f = F::zero();
+    let mut f = F::ZERO;
     value.map(|v| f = v);
     f
 }

@@ -141,7 +141,7 @@ impl<F: Field> ExecutionGadget<F> for ErrorInvalidJumpGadget<F> {
 
         // set default value in case can not find value, is_code from bytecode table
         let dest = u64::try_from(dest).unwrap_or(code_len);
-        let mut code_pair = (0u8, false, Value::known(F::zero()));
+        let mut code_pair = (0u8, false, Value::known(F::ZERO));
         if dest < code_len {
             // get real value from bytecode table
             code_pair = code.get_byte_row(dest as usize, region.challenges());

@@ -481,7 +481,7 @@ impl Key {
     }
     fn storage_key<F: Field>(&self, randomness: F) -> F {
         match self {
-            Self::Account { .. } => F::zero(),
+            Self::Account { .. } => F::ZERO,
             Self::AccountStorage { storage_key, .. } => {
                 rlc::value(&storage_key.to_le_bytes(), randomness)
             }
@@ -492,7 +492,7 @@ impl Key {
 impl<F: Field> MptUpdateRow<Value<F>> {
     /// Corresponds to the padding row the mpt circuit uses to fill its columns.
     pub fn padding() -> Self {
-        let mut values = [F::zero(); 7];
+        let mut values = [F::ZERO; 7];
         values[2] = F::from(MPTProofType::AccountDoesNotExist as u64);
         Self(values.map(Value::known))
     }

@@ -31,8 +31,8 @@ pub fn unroll_with_codehash<F: Field>(code_hash: U256, bytes: Vec<u8>) -> Unroll
     let mut rows = vec![BytecodeRow::<F> {
         code_hash,
         tag: F::from(BytecodeFieldTag::Header as u64),
-        index: F::zero(),
-        is_code: F::zero(),
+        index: F::ZERO,
+        is_code: F::ZERO,
         value: F::from(bytes.len() as u64),
     }];
     // Run over all the bytes
@@ -99,7 +99,7 @@ pub fn unroll_to_hash_input<F: Field, const BYTES_IN_FIELD: usize, const INPUT_L
 
     let (mut inputs, last) = msgs
         .into_iter()
-        .chain(std::iter::repeat(F::zero()))
+        .chain(std::iter::repeat(F::ZERO))
         .take(input_cnt * INPUT_LEN)
         .fold(
             (Vec::new(), [None; INPUT_LEN]),

@@ -117,7 +117,7 @@ impl<'r, 'b, F: Field> CachedRegion<'r, 'b, F> {
     ) -> Self {
         Self {
             region,
-            advice: vec![vec![F::zero(); height]; advice_columns.len()],
+            advice: vec![vec![F::ZERO; height]; advice_columns.len()],
             challenges,
             width_start: advice_columns[0].index(),
             height_start,
@@ -576,7 +576,7 @@ pub(crate) mod from_bytes {
             "Too many bytes to compose an integer in field"
         );
         let mut value = 0.expr();
-        let mut multiplier = F::one();
+        let mut multiplier = F::ONE;
         for byte in bytes.iter() {
             value = value + byte.expr() * multiplier;
             multiplier *= F::from(256);
@@ -589,8 +589,8 @@ pub(crate) mod from_bytes {
             bytes.len() <= MAX_N_BYTES_INTEGER,
             "Too many bytes to compose an integer in field"
         );
-        let mut value = F::zero();
-        let mut multiplier = F::one();
+        let mut value = F::ZERO;
+        let mut multiplier = F::ONE;
         for byte in bytes.iter() {
             value += F::from(*byte as u64) * multiplier;
             multiplier *= F::from(256);
@@ -611,7 +611,7 @@ pub(crate) mod from_bits {
             "Too many bits to compose an integer in field"
         );
         let mut value = 0.expr();
-        let mut multiplier = F::one();
+        let mut multiplier = F::ONE;
         for bit in bits.iter() {
             value = value + bit.expr() * multiplier;
             multiplier *= F::from(2);
@@ -624,8 +624,8 @@ pub(crate) mod from_bits {
             bits.len() <= MAX_N_BYTES_INTEGER * 8,
             "Too many bits to compose an integer in field"
         );
-        let mut value = F::zero();
-        let mut multiplier = F::one();
+        let mut value = F::ZERO;
+        let mut multiplier = F::ONE;
         for bit in bits.iter() {
             value += F::from(*bit as u64) * multiplier;
             multiplier *= F::from(2);
@@ -636,7 +636,7 @@ pub(crate) mod from_bits {
 
 /// Returns the random linear combination of the inputs.
 /// Encoding is done as follows: v_0 * R^0 + v_1 * R^1 + ...
-pub(crate) mod rlc {
+pub mod rlc {
     use std::ops::{Add, Mul};
 
     use crate::util::Expr;
@@ -651,7 +651,7 @@ pub(crate) mod rlc {
         }
     }
 
-    pub(crate) fn value<'a, F: Field, I>(values: I, randomness: F) -> F
+    pub fn value<'a, F: Field, I>(values: I, randomness: F) -> F
     where
         I: IntoIterator<Item = &'a u8>,
         <I as IntoIterator>::IntoIter: DoubleEndedIterator,
@@ -663,7 +663,7 @@ pub(crate) mod rlc {
         if !values.is_empty() {
             generic(values, randomness)
         } else {
-            F::zero()
+            F::ZERO
         }
     }
 

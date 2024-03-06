@@ -622,7 +622,7 @@ pub mod test {
                     // Assign some non-zero values to make sure the advice/fixed columns have
                     // non-identity commitments.
                     let a = region.assign_advice(|| "", w_l, 0, || Value::known(self.0))?;
-                    region.assign_fixed(|| "", q_l, 0, || Value::known(-F::one()))?;
+                    region.assign_fixed(|| "", q_l, 0, || Value::known(-F::ONE))?;
                     a.copy_advice(|| "", &mut region, w_r, 1)?;
                     a.copy_advice(|| "", &mut region, w_o, 2)?;
                     region.assign_advice(|| "", w_l, 3, || Value::known(-F::from(5)))?;

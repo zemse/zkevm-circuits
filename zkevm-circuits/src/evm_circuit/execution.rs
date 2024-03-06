@@ -1019,13 +1019,13 @@ impl<F: Field> ExecutionConfig<F> {
                 || "q_usable selector",
                 self.q_usable,
                 offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
             region.assign_advice(
                 || "step selector",
                 self.q_step,
                 offset,
-                || Value::known(if idx == 0 { F::one() } else { F::zero() }),
+                || Value::known(if idx == 0 { F::ONE } else { F::ZERO }),
             )?;
             let value = if idx == 0 { 0 } else { (height - idx) as u64 };
             region.assign_advice(
@@ -1089,7 +1089,7 @@ impl<F: Field> ExecutionConfig<F> {
                 || "step selector",
                 self.q_step,
                 height - 1,
-                || Value::known(F::zero()),
+                || Value::known(F::ZERO),
             )?;
             Ok(height)
         };
@@ -1347,13 +1347,13 @@ impl<F: Field> ExecutionConfig<F> {
                     || "step height",
                     self.num_rows_until_next_step,
                     1,
-                    || Value::known(F::zero()),
+                    || Value::known(F::ZERO),
                 )?;
                 region.assign_advice(
                     || "step height inv",
                     self.q_step,
                     1,
-                    || Value::known(F::zero()),
+                    || Value::known(F::ZERO),
                 )?;
                 Ok(2) // region height
             },
@@ -1751,9 +1751,9 @@ impl<F: Field> ExecutionConfig<F> {
         block: &Block<F>,
         challenges: &Challenges<Value<F>>,
     ) {
-        let mut evm_randomness = F::zero();
+        let mut evm_randomness = F::ZERO;
         challenges.evm_word().map(|v| evm_randomness = v);
-        let mut lookup_randomness = F::zero();
+        let mut lookup_randomness = F::ZERO;
         challenges.lookup_input().map(|v| lookup_randomness = v);
         if evm_randomness.is_zero_vartime() || lookup_randomness.is_zero_vartime() {
             // challenges not ready

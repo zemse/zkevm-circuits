@@ -134,10 +134,10 @@ pub(crate) fn assert_conditional_equal<F: Field>(
     a.value()
         .zip(b.value().zip(cond.value()))
         .error_if_known_and(|(&a, (&b, &cond))| {
-            if cond == F::one() && a != b {
+            if cond == F::ONE && a != b {
                 log::error!("{description}");
             }
-            cond == F::one() && a != b
+            cond == F::ONE && a != b
         })
 }
 

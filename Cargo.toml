@@ -67,6 +67,8 @@ strum_macros = "0.25"
 subtle = "2.4"
 tokio = { version = "1.13", features = ["macros", "rt-multi-thread"] }
 url = "2.2"
+axiom-eth = { git = "https://github.com/zemse/axiom-eth.git", branch = "scroll-static-call", default-features = false, features = ["halo2-pse"] }
+
 
 [patch.crates-io]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "v2.0.7" }

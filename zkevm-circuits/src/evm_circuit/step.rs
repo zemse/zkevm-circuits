@@ -507,17 +507,13 @@ impl<F: Field> DynamicSelectorHalf<F> {
         self.target_odd.assign(
             region,
             offset,
-            Value::known(if odd { F::one() } else { F::zero() }),
+            Value::known(if odd { F::ONE } else { F::ZERO }),
         )?;
         for (index, cell) in self.target_pairs.iter().enumerate() {
             cell.assign(
                 region,
                 offset,
-                Value::known(if index == pair_index {
-                    F::one()
-                } else {
-                    F::zero()
-                }),
+                Value::known(if index == pair_index { F::ONE } else { F::ZERO }),
             )?;
         }
         Ok(())

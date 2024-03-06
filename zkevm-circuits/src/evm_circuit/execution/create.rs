@@ -786,9 +786,9 @@ impl<F: Field, const IS_CREATE2: bool, const S: ExecutionState> ExecutionGadget<
             region,
             offset,
             Value::known(if !is_precheck_ok || is_address_collision {
-                F::zero()
+                F::ZERO
             } else if init_code_length.as_usize() == 0 {
-                F::one()
+                F::ONE
             } else {
                 rws.next(); // callee nonce += 1
                 rws.next(); // caller id

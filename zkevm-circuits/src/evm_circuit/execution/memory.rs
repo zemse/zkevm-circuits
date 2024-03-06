@@ -197,19 +197,19 @@ impl<F: Field> ExecutionGadget<F> for MemoryGadget<F> {
 
         let shift = address % 32;
         self.mask
-            .assign(region, offset, shift, is_mstore8 == F::one())?;
+            .assign(region, offset, shift, is_mstore8 == F::ONE)?;
 
         // Memory expansion
         self.memory_expansion.assign(
             region,
             offset,
             step.memory_word_size(),
-            [address + if is_mstore8 == F::one() { 1 } else { 32 }],
+            [address + if is_mstore8 == F::ONE { 1 } else { 32 }],
         )?;
 
         // assign value_left value_right word
         let (value_left, value_left_prev) = block.rws[step.rw_indices[2]].memory_word_pair();
-        let (value_right, value_right_prev) = if is_mstore8 == F::one() {
+        let (value_right, value_right_prev) = if is_mstore8 == F::ONE {
             (U256::zero(), U256::zero())
         } else {
             block.rws[step.rw_indices[3]].memory_word_pair()

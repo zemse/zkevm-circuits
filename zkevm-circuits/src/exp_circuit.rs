@@ -428,14 +428,14 @@ impl<F: Field> ExpCircuitConfig<F> {
                 || format!("exp_circuit: {:?}: {}", self.exp_table.is_step, offset),
                 self.exp_table.is_step,
                 *offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
             for i in 1..OFFSET_INCREMENT {
                 region.assign_fixed(
                     || format!("exp_circuit: {:?}: {}", self.exp_table.is_step, *offset + i),
                     self.exp_table.is_step,
                     *offset + i,
-                    || Value::known(F::zero()),
+                    || Value::known(F::ZERO),
                 )?;
             }
             // mul_chip has 8 rows, exp_table has 4 rows. So we increment the offset by
@@ -463,7 +463,7 @@ impl<F: Field> ExpCircuitConfig<F> {
                 || "assign q_enable",
                 self.q_enable,
                 offset + i,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
         }
         mul_chip.assign(region, offset, [step.a, step.b, U256::zero(), step.d])?;
@@ -498,14 +498,14 @@ impl<F: Field> ExpCircuitConfig<F> {
                     || format!("unused rows: {}", offset + i),
                     *column,
                     offset + i,
-                    || Value::known(F::zero()),
+                    || Value::known(F::ZERO),
                 )?;
             }
             region.assign_fixed(
                 || format!("unused rows: {}", offset + i),
                 self.exp_table.is_step,
                 offset + i,
-                || Value::known(F::zero()),
+                || Value::known(F::ZERO),
             )?;
         }
 

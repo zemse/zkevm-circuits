@@ -198,14 +198,14 @@ impl<F: Field, const XI_0: i64> EccCircuit<F, XI_0> {
         }
 
         // keccak powers of randomness.
-        let keccak_powers = std::iter::successors(Some(Value::known(F::one())), |coeff| {
+        let keccak_powers = std::iter::successors(Some(Value::known(F::ONE)), |coeff| {
             Some(challenges.keccak_input() * coeff)
         })
         .take(N_PAIRING_PER_OP * N_BYTES_PER_PAIR)
         .map(|x| QuantumCell::Witness(x))
         .collect_vec();
 
-        let powers_of_256 = iter::successors(Some(F::one()), |coeff| Some(F::from(256) * coeff))
+        let powers_of_256 = iter::successors(Some(F::ONE), |coeff| Some(F::from(256) * coeff))
             .take(N_BYTES_WORD)
             .map(|x| QuantumCell::Constant(x))
             .collect_vec();
@@ -362,7 +362,7 @@ impl<F: Field, const XI_0: i64> EccCircuit<F, XI_0> {
                         || format!("input_rlc at offset = {idx}"),
                         config.ecc_table.input_rlc,
                         idx,
-                        || Value::known(F::zero()),
+                        || Value::known(F::ZERO),
                     )?;
                 }
 
@@ -416,7 +416,7 @@ impl<F: Field, const XI_0: i64> EccCircuit<F, XI_0> {
                             || format!("{col:?} at offset = {idx}"),
                             col,
                             idx,
-                            || Value::known(F::zero()),
+                            || Value::known(F::ZERO),
                         )?;
                     }
                 }
@@ -463,7 +463,7 @@ impl<F: Field, const XI_0: i64> EccCircuit<F, XI_0> {
                             || format!("{col:?} at offset = {idx}"),
                             col,
                             idx,
-                            || Value::known(F::zero()),
+                            || Value::known(F::ZERO),
                         )?;
                     }
                 }

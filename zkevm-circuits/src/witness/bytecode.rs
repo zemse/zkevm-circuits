@@ -35,13 +35,13 @@ impl Bytecode {
         rows.push([
             hash,
             Value::known(F::from(BytecodeFieldTag::Header as u64)),
-            Value::known(F::zero()),
-            Value::known(F::zero()),
+            Value::known(F::ZERO),
+            Value::known(F::ZERO),
             Value::known(F::from(self.bytes.len() as u64)),
-            Value::known(F::zero()),
+            Value::known(F::ZERO),
         ]);
 
-        let mut push_rlc = Value::known(F::zero());
+        let mut push_rlc = Value::known(F::ZERO);
 
         let mut push_data_left = 0;
         for (idx, byte) in self.bytes.iter().enumerate() {
@@ -74,7 +74,7 @@ impl Bytecode {
 
     /// Return the RLC (LE order) of a bytecode slice.
     fn make_push_rlc<F: Field>(rand: Value<F>, rows: &[u8]) -> Value<F> {
-        let mut acc = Value::known(F::zero());
+        let mut acc = Value::known(F::ZERO);
         for byte in rows {
             acc = acc * rand + Value::known(F::from(*byte as u64));
         }
@@ -115,7 +115,7 @@ impl Bytecode {
         let (byte, is_code, push_range) = self.get(dest);
 
         let push_rlc = match push_range {
-            None => Value::known(F::zero()),
+            None => Value::known(F::ZERO),
 
             Some((start, length)) => {
                 let end = (start + length).min(self.bytes.len());

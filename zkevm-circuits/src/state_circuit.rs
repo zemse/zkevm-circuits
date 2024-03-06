@@ -260,7 +260,7 @@ impl<F: Field> StateCircuitConfig<F> {
                 || "selector",
                 self.selector,
                 offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
 
             tag_chip.assign(region, offset, &row.tag())?;
@@ -295,7 +295,7 @@ impl<F: Field> StateCircuitConfig<F> {
                     || "not_first_access",
                     self.not_first_access,
                     offset,
-                    || Value::known(if is_first_access { F::zero() } else { F::one() }),
+                    || Value::known(if is_first_access { F::ZERO } else { F::ONE }),
                 )?;
 
                 if is_first_access {
@@ -314,7 +314,7 @@ impl<F: Field> StateCircuitConfig<F> {
                             }
                             if matches!(row.tag(), RwTableTag::CallContext)
                                 && !row.is_write()
-                                && row.value_assignment(randomness) != F::zero()
+                                && row.value_assignment(randomness) != F::ZERO
                             {
                                 log::error!("invalid call context: {:?}", row);
                             }
@@ -452,7 +452,7 @@ impl<F: Field> StateCircuitConfig<F> {
                 || "selector",
                 self.selector,
                 offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
 
             tag_chip.assign(region, offset, &row.tag())?;
@@ -487,7 +487,7 @@ impl<F: Field> StateCircuitConfig<F> {
                     || "not_first_access",
                     self.not_first_access,
                     offset,
-                    || Value::known(if is_first_access { F::zero() } else { F::one() }),
+                    || Value::known(if is_first_access { F::ZERO } else { F::ONE }),
                 )?;
                 is_first_access_vec.push(is_first_access);
             }
@@ -602,7 +602,7 @@ impl<F: Field> StateCircuitConfig<F> {
                             }
                             if matches!(row.tag(), RwTableTag::CallContext)
                                 && !row.is_write()
-                                && row.value_assignment(randomness) != F::zero()
+                                && row.value_assignment(randomness) != F::ZERO
                             {
                                 log::error!("invalid call context: {:?}", row);
                             }
@@ -712,7 +712,7 @@ impl<F: Field> StateCircuitConfig<F> {
                                 || "rw_table.rw_counter",
                                 column,
                                 rows.len() - 1,
-                                || Value::known(F::zero()),
+                                || Value::known(F::ZERO),
                             )?;
                             return Ok(());
                         }
@@ -746,7 +746,7 @@ impl<F: Field> StateCircuitConfig<F> {
                                 column,
                                 // indices won't be empty
                                 indices.len() - 1,
-                                || Value::known(F::zero()),
+                                || Value::known(F::ZERO),
                             )?;
                             return Ok(vec![]);
                         }
@@ -983,7 +983,7 @@ impl<F: Field> SubCircuit<F> for StateCircuit<F> {
                         || "step selector",
                         config.rw_table.rw_counter,
                         self.n_rows - 1,
-                        || Value::known(F::zero()),
+                        || Value::known(F::ZERO),
                     )?;
                     return Ok(());
                 }

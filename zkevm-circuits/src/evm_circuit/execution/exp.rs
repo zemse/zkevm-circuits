@@ -212,7 +212,7 @@ impl<F: Field> ExecutionGadget<F> for ExponentiationGadget<F> {
         self.exponent_hi_is_zero
             .assign(region, offset, exponent_hi_scalar)?;
         self.exponent_lo_is_one
-            .assign(region, offset, exponent_lo_scalar, F::one())?;
+            .assign(region, offset, exponent_lo_scalar, F::ONE)?;
 
         self.exponent_byte_size
             .assign(region, offset, ByteOrWord::Word(exponent))?;

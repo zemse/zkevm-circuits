@@ -41,7 +41,7 @@ pub(crate) fn rlc_be_bytes<F: Field>(bytes: &[u8], rand: Value<F>) -> Value<F> {
     rand.map(|rand| {
         bytes
             .iter()
-            .fold(F::zero(), |acc, byte| acc * rand + F::from(*byte as u64))
+            .fold(F::ZERO, |acc, byte| acc * rand + F::from(*byte as u64))
     })
 }
 

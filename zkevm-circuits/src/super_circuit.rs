@@ -71,7 +71,7 @@ use crate::{
     },
     modexp_circuit::{ModExpCircuit, ModExpCircuitConfig},
     pi_circuit::{PiCircuit, PiCircuitConfig, PiCircuitConfigArgs},
-    poseidon_circuit::{PoseidonCircuit, PoseidonCircuitConfig, PoseidonCircuitConfigArgs},
+    // poseidon_circuit::{PoseidonCircuit, PoseidonCircuitConfig, PoseidonCircuitConfigArgs},
     rlp_circuit_fsm::{RlpCircuit, RlpCircuitConfig, RlpCircuitConfigArgs},
     sha256_circuit::{
         CircuitConfig as SHA256CircuitConfig, CircuitConfigArgs as SHA256CircuitConfigArgs,
@@ -128,7 +128,7 @@ pub struct SuperCircuitConfig<F: Field> {
     bytecode_circuit: ToHashBlockCircuitConfig<F, HASHBLOCK_BYTES_IN_FIELD>,
     copy_circuit: CopyCircuitConfig<F>,
     keccak_circuit: KeccakCircuitConfig<F>,
-    poseidon_circuit: PoseidonCircuitConfig<F>,
+    // poseidon_circuit: PoseidonCircuitConfig<F>,
     pi_circuit: PiCircuitConfig<F>,
     exp_circuit: ExpCircuitConfig<F>,
     rlp_circuit: RlpCircuitConfig<F>,
@@ -229,9 +229,9 @@ impl SubCircuitConfig<Fr> for SuperCircuitConfig<Fr> {
         );
         log_circuit_info(meta, "sha256 circuit");
 
-        let poseidon_circuit =
-            PoseidonCircuitConfig::new(meta, PoseidonCircuitConfigArgs { poseidon_table });
-        log_circuit_info(meta, "poseidon circuit");
+        // let poseidon_circuit =
+        //     PoseidonCircuitConfig::new(meta, PoseidonCircuitConfigArgs { poseidon_table });
+        // log_circuit_info(meta, "poseidon circuit");
 
         let rlp_circuit = RlpCircuitConfig::new(
             meta,
@@ -400,7 +400,7 @@ impl SubCircuitConfig<Fr> for SuperCircuitConfig<Fr> {
             bytecode_circuit,
             keccak_circuit,
             sha256_circuit,
-            poseidon_circuit,
+            // poseidon_circuit,
             pi_circuit,
             rlp_circuit,
             tx_circuit,
@@ -454,7 +454,7 @@ pub struct SuperCircuit<
     /// SHA256 Circuit
     pub sha256_circuit: SHA256Circuit<F>,
     /// Poseidon hash Circuit
-    pub poseidon_circuit: PoseidonCircuit<F>,
+    // pub poseidon_circuit: PoseidonCircuit<F>,
     /// Sig Circuit
     // pub sig_circuit: SigCircuit<F>,
     /// Modexp Circuit
@@ -518,8 +518,8 @@ impl<
         push("mod_exp", mod_exp);
         let pi = PiCircuit::min_num_rows_block(block);
         push("pi", pi);
-        let poseidon = PoseidonCircuit::min_num_rows_block(block);
-        push("poseidon", poseidon);
+        // let poseidon = PoseidonCircuit::min_num_rows_block(block);
+        // push("poseidon", poseidon);
         // let sig = SigCircuit::min_num_rows_block(block);
         // push("sig", sig);
         // let ecc = EccCircuit::<Fr, 9>::min_num_rows_block(block);
@@ -590,7 +590,7 @@ impl<
         let modexp_circuit = ModExpCircuit::new_from_block(block);
         let keccak_circuit = KeccakCircuit::new_from_block(block);
         let sha256_circuit = SHA256Circuit::new_from_block(block);
-        let poseidon_circuit = PoseidonCircuit::new_from_block(block);
+        // let poseidon_circuit = PoseidonCircuit::new_from_block(block);
         let rlp_circuit = RlpCircuit::new_from_block(block);
         // let sig_circuit = SigCircuit::new_from_block(block);
         // let ecc_circuit = EccCircuit::new_from_block(block);
@@ -606,7 +606,7 @@ impl<
             exp_circuit,
             keccak_circuit,
             sha256_circuit,
-            poseidon_circuit,
+            // poseidon_circuit,
             rlp_circuit,
             // sig_circuit,
             modexp_circuit,
@@ -668,8 +668,8 @@ impl<
         self.sha256_circuit
             .synthesize_sub(&config.sha256_circuit, challenges, layouter)?;
         log::debug!("assigning poseidon_circuit");
-        self.poseidon_circuit
-            .synthesize_sub(&config.poseidon_circuit, challenges, layouter)?;
+        // self.poseidon_circuit
+        //     .synthesize_sub(&config.poseidon_circuit, challenges, layouter)?;
         log::debug!("assigning bytecode_circuit");
         self.bytecode_circuit
             .synthesize_sub(&config.bytecode_circuit, challenges, layouter)?;

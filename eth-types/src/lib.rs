@@ -60,35 +60,34 @@ use crate::evm_types::Stack;
 #[cfg(feature = "enable-storage")]
 use crate::evm_types::Storage;
 
+pub use axiom_eth::Field;
+
 /// Trait used to reduce verbosity with the declaration of the [`Field`]
 /// trait and its repr.
-pub trait Field:
-    PrimeField<Repr = [u8; 32]>
-    + hash_circuit::hash::Hashable
-    + std::convert::From<Fr>
-    + ScalarField
-    + Serialize
-    + for<'de> Deserialize<'de>
-{
-    /// Re-expose zero element as a function
-    fn zero() -> Self {
-        Self::ZERO
-    }
+// pub trait Field:
+//     PrimeField<Repr = [u8; 32]> + hash_circuit::hash::Hashable + std::convert::From<Fr> +
+// ScalarField // + Serialize
+// // + for<'de> Deserialize<'de>
+// {
+//     /// Re-expose zero element as a function
+//     fn zero() -> Self {
+//         Self::ZERO
+//     }
 
-    /// Re-expose one element as a function
-    fn one() -> Self {
-        Self::ONE
-    }
+//     /// Re-expose one element as a function
+//     fn one() -> Self {
+//         Self::ONE
+//     }
 
-    // Expose the lower 128 bits
-    // fn get_lower_128(&self) -> u128 {
-    //     u128::from_le_bytes(self.to_repr().as_ref()[..16].try_into().unwrap())
-    // }
-}
+//     // Expose the lower 128 bits
+//     // fn get_lower_128(&self) -> u128 {
+//     //     u128::from_le_bytes(self.to_repr().as_ref()[..16].try_into().unwrap())
+//     // }
+// }
 
 // Impl custom `Field` trait for BN256 Fr to be used and consistent with the
 // rest of the workspace.
-impl Field for Fr {}
+// impl Field for Fr {}
 
 // Impl custom `Field` trait for BN256 Fq to be used and consistent with the
 // rest of the workspace.

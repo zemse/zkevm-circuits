@@ -347,7 +347,7 @@ impl<F: Field> SigCircuit<F> {
         let ecc_chip = EccChip::<F, FpChip<F>>::construct(ecdsa_chip.clone());
         let pk_assigned = ecc_chip.load_private(ctx, (Value::known(pk.x), Value::known(pk.y)));
         let pk_is_valid = ecc_chip.is_on_curve_or_infinity::<Secp256k1Affine>(ctx, &pk_assigned);
-        gate.assert_is_const(ctx, &pk_is_valid, F::one());
+        gate.assert_is_const(ctx, &pk_is_valid, F::ONE);
 
         // build Fq chip from Fp chip
         let fq_chip = FqChip::construct(ecdsa_chip.range.clone(), 88, 3, modulus::<Fq>());
@@ -390,7 +390,7 @@ impl<F: Field> SigCircuit<F> {
 
         // the last 88 bits of y
         let assigned_y_limb = &y_coord.limbs()[0];
-        let mut y_value = F::zero();
+        let mut y_value = F::ZERO;
         assigned_y_limb.value().map(|&x| y_value = x);
 
         // y_tmp = (y_value - y_last_bit)/2
@@ -517,7 +517,7 @@ impl<F: Field> SigCircuit<F> {
         // step 0. powers of aux parameters
         // ================================================
         let powers_of_256 =
-            iter::successors(Some(F::one()), |coeff| Some(F::from(256) * coeff)).take(32);
+            iter::successors(Some(F::ONE), |coeff| Some(F::from(256) * coeff)).take(32);
         let powers_of_256_cells = powers_of_256
             .map(|x| QuantumCell::Constant(x))
             .collect_vec();
@@ -658,7 +658,7 @@ impl<F: Field> SigCircuit<F> {
         // ================================================
         // step 0. powers of aux parameters
         // ================================================
-        let evm_challenge_powers = iter::successors(Some(Value::known(F::one())), |coeff| {
+        let evm_challenge_powers = iter::successors(Some(Value::known(F::ONE)), |coeff| {
             Some(challenges.evm_word() * coeff)
         })
         .take(32)
@@ -667,7 +667,7 @@ impl<F: Field> SigCircuit<F> {
 
         log::trace!("evm challenge: {:?} ", challenges.evm_word());
 
-        let keccak_challenge_powers = iter::successors(Some(Value::known(F::one())), |coeff| {
+        let keccak_challenge_powers = iter::successors(Some(Value::known(F::ONE)), |coeff| {
             Some(challenges.keccak_input() * coeff)
         })
         .take(64)
@@ -876,7 +876,7 @@ impl<F: Field> SigCircuit<F> {
                         || "assign sig_table selector",
                         config.sig_table.q_enable,
                         idx,
-                        || Value::known(F::one()),
+                        || Value::known(F::ONE),
                     )?;
 
                     assigned_sig_verif

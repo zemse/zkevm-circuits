@@ -2310,7 +2310,7 @@ impl<F: Field> RlpCircuitConfig<F> {
             || "q_enable",
             self.rlp_table.q_enable,
             row,
-            || Value::known(F::one()),
+            || Value::known(F::ONE),
         )?;
         // assign to rlp_table
         region.assign_advice(
@@ -2752,7 +2752,7 @@ impl<F: Field> RlpCircuitConfig<F> {
             region,
             row,
             Value::known(F::from(witness.state_machine.depth as u64)),
-            Value::known(F::zero()),
+            Value::known(F::ZERO),
         )?;
 
         let depth_eq_one_chip = IsEqualChip::construct(self.depth_eq_one.clone());
@@ -2760,7 +2760,7 @@ impl<F: Field> RlpCircuitConfig<F> {
             region,
             row,
             Value::known(F::from(witness.state_machine.depth as u64)),
-            Value::known(F::one()),
+            Value::known(F::ONE),
         )?;
         let depth_eq_two_chip = IsEqualChip::construct(self.depth_eq_two.clone());
         depth_eq_two_chip.assign(
@@ -2828,7 +2828,7 @@ impl<F: Field> RlpCircuitConfig<F> {
             || "q_enable",
             self.rlp_table.q_enable,
             row,
-            || Value::known(F::zero()),
+            || Value::known(F::ZERO),
         )?;
         region.assign_advice(
             || "sm.state",
@@ -2948,12 +2948,12 @@ impl<F: Field> RlpCircuitConfig<F> {
                 for i in sm_rows.len()..last_row {
                     self.assign_sm_end_row(&mut region, i)?;
                 }
-                region.assign_fixed(|| "q_first", self.q_first, 0, || Value::known(F::one()))?;
+                region.assign_fixed(|| "q_first", self.q_first, 0, || Value::known(F::ONE))?;
                 region.assign_fixed(
                     || "q_last",
                     self.q_last,
                     last_row - 1,
-                    || Value::known(F::one()),
+                    || Value::known(F::ONE),
                 )?;
 
                 Ok(())

@@ -851,7 +851,7 @@ impl<F: Field> PiCircuitConfig<F> {
                 || "q_block_context",
                 self.q_block_context,
                 q_offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
         }
         // Enable fixed columns for tx hashes.
@@ -861,7 +861,7 @@ impl<F: Field> PiCircuitConfig<F> {
                 || "q_tx_hashes",
                 self.q_tx_hashes,
                 q_offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
         }
         // Enable RLC accumulator consistency check throughout the above rows.
@@ -1242,15 +1242,15 @@ impl<F: Field> PiCircuitConfig<F> {
             || "rpi_rlc_acc[0]",
             self.rpi_rlc_acc,
             offset,
-            F::zero(),
+            F::ZERO,
         )?;
         region.assign_advice_from_constant(
             || "rpi_length_acc[0]",
             self.rpi_length_acc,
             offset,
-            F::zero(),
+            F::ZERO,
         )?;
-        Ok((offset + 1, Value::known(F::zero()), Value::known(F::zero())))
+        Ok((offset + 1, Value::known(F::ZERO), Value::known(F::ZERO)))
     }
 
     /// Assign a variable length field (in its big-endian byte representation to the PI circuit.
@@ -1275,9 +1275,9 @@ impl<F: Field> PiCircuitConfig<F> {
         // randomness challenge to compute a random linear combination of its be-bytes. For fields
         // that do fit within the scalar field, we simply compute the linear combination with 2^8.
         let (is_field_rlc, field_rand) = if n_bytes * 8 > F::CAPACITY as usize {
-            (F::one(), challenges.evm_word())
+            (F::ONE, challenges.evm_word())
         } else {
-            (F::zero(), Value::known(F::from(BYTE_POW_BASE)))
+            (F::ZERO, Value::known(F::from(BYTE_POW_BASE)))
         };
 
         // Some random linear combination of bytes are then hashed to check if:
@@ -1288,8 +1288,8 @@ impl<F: Field> PiCircuitConfig<F> {
         //
         // However for other cases, we use the keccak randomness from the challenge API.
         let (is_rlc_keccak, rlc_rand) = match field_type {
-            RpiFieldType::KeccakHiLo | RpiFieldType::Constant => (F::zero(), challenges.evm_word()),
-            _ => (F::one(), challenges.keccak_input()),
+            RpiFieldType::KeccakHiLo | RpiFieldType::Constant => (F::ZERO, challenges.evm_word()),
+            _ => (F::ONE, challenges.keccak_input()),
         };
 
         // The RLC of the big-endian bytes representing this field's value.
@@ -1298,7 +1298,7 @@ impl<F: Field> PiCircuitConfig<F> {
         // The linear combination accumulator for this specific field.
         let rpi_bytes_acc = value_be_bytes
             .iter()
-            .scan(Value::known(F::zero()), |acc, &byte| {
+            .scan(Value::known(F::ZERO), |acc, &byte| {
                 *acc = *acc * field_rand + Value::known(F::from(byte as u64));
                 Some(*acc)
             })
@@ -1322,7 +1322,7 @@ impl<F: Field> PiCircuitConfig<F> {
                     // Update rpi_rlc and rpi_length if this field is not meant for padding.
                     if !is_rpi_padding {
                         rpi_rlc_acc = rpi_rlc_acc * rlc_rand + Value::known(F::from(byte as u64));
-                        rpi_length = rpi_length.map(|v| v + F::one());
+                        rpi_length = rpi_length.map(|v| v + F::ONE);
                     }
 
                     region.assign_fixed(
@@ -1387,7 +1387,7 @@ impl<F: Field> PiCircuitConfig<F> {
                         row_offset,
                         || {
                             if is_rpi_padding {
-                                Value::known(F::zero())
+                                Value::known(F::ZERO)
                             } else {
                                 rpi_value
                             }
@@ -1472,7 +1472,7 @@ impl<F: Field> PiCircuitConfig<F> {
                 || "block table all-zero row for fixed",
                 fixed,
                 offset,
-                || Value::known(F::zero()),
+                || Value::known(F::ZERO),
             )?;
         }
         region.assign_fixed(
@@ -1489,7 +1489,7 @@ impl<F: Field> PiCircuitConfig<F> {
                 || "block table all-zero row",
                 *column,
                 offset,
-                || Value::known(F::zero()),
+                || Value::known(F::ZERO),
             )?;
         }
         offset += 1;
@@ -1569,7 +1569,7 @@ impl<F: Field> PiCircuitConfig<F> {
                         || "q_block_tag",
                         self.q_block_tag,
                         offset,
-                        || Value::known(F::one()),
+                        || Value::known(F::ONE),
                     )?;
                 }
                 if *tag == CumNumTxs {
@@ -1577,7 +1577,7 @@ impl<F: Field> PiCircuitConfig<F> {
                     cum_num_txs_field = F::from(cum_num_txs as u64);
                 }
                 if offset == 1 {
-                    assert_eq!(cum_num_txs_field, F::zero());
+                    assert_eq!(cum_num_txs_field, F::ZERO);
                     // use copy constraint to make sure that cum_num_txs starts with 0
                     region.assign_advice_from_constant(
                         || "cum_num_txs",

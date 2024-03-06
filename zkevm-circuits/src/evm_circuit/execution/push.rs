@@ -82,7 +82,7 @@ impl<F: Field> ExecutionGadget<F> for PushGadget<F> {
                 .evm_word()
                 .map(|challenge| rlc::value(&value.to_le_bytes(), challenge))
         } else {
-            Value::known(F::zero())
+            Value::known(F::ZERO)
         };
         self.value.assign(region, offset, value_rlc)?;
 

@@ -2325,8 +2325,8 @@ impl<F: Field> TxCircuitConfig<F> {
             1,
             TxFieldTag::Null,
             0,
-            Value::known(F::zero()),
-            Value::known(F::zero()),
+            Value::known(F::ZERO),
+            Value::known(F::ZERO),
         )?;
         let (col_anno, col, col_val) = ("rlp_tag", self.rlp_tag, F::from(usize::from(Null) as u64));
         region.assign_advice(|| col_anno, col, *offset, || Value::known(col_val))?;
@@ -2352,7 +2352,7 @@ impl<F: Field> TxCircuitConfig<F> {
     ) -> Result<Vec<AssignedCell<F, F>>, Error> {
         let keccak_input = challenges.keccak_input();
         let evm_word = challenges.evm_word();
-        let zero_rlc = keccak_input.map(|_| F::zero());
+        let zero_rlc = keccak_input.map(|_| F::ZERO);
         let sign_hash = keccak256(tx.rlp_unsigned.as_slice());
         let hash = keccak256(tx.rlp_signed.as_slice());
         let sign_hash_rlc = rlc_be_bytes(&sign_hash, evm_word);
@@ -2626,7 +2626,7 @@ impl<F: Field> TxCircuitConfig<F> {
                 tx_tag,
                 0,
                 tx_value,
-                Value::known(F::zero()),
+                Value::known(F::ZERO),
             )?);
 
             // 1st phase columns
@@ -2709,7 +2709,7 @@ impl<F: Field> TxCircuitConfig<F> {
                 if is_data_length {
                     F::from(!tx.call_data.is_empty() as u64)
                 } else {
-                    F::zero()
+                    F::ZERO
                 }
             });
             // 2. lookup to ensure the final row in the access list dynamic section is present.
@@ -2719,9 +2719,9 @@ impl<F: Field> TxCircuitConfig<F> {
                     && tx.access_list.is_some()
                     && !tx.access_list.as_ref().unwrap().0.is_empty()
                 {
-                    F::one()
+                    F::ONE
                 } else {
-                    F::zero()
+                    F::ZERO
                 }
             });
             // 3. lookup to RLP table for signing (non L1 msg)
@@ -2838,7 +2838,7 @@ impl<F: Field> TxCircuitConfig<F> {
     ) -> Result<(), Error> {
         // assign to call_data related columns
         let mut gas_cost_acc = 0;
-        let mut rlc = challenges.keccak_input().map(|_| F::zero());
+        let mut rlc = challenges.keccak_input().map(|_| F::ZERO);
         for (idx, byte) in tx.call_data.iter().enumerate() {
             let is_final = idx == (tx.call_data.len() - 1);
             gas_cost_acc += if *byte == 0 { 4 } else { 16 };
@@ -2860,7 +2860,7 @@ impl<F: Field> TxCircuitConfig<F> {
                 CallData,
                 idx as u64,
                 Value::known(F::from(*byte as u64)),
-                Value::known(F::zero()),
+                Value::known(F::ZERO),
             )?;
 
             // 1st phase columns
@@ -2874,7 +2874,7 @@ impl<F: Field> TxCircuitConfig<F> {
                     F::from(gas_cost_acc),
                 ),
                 ("byte", self.calldata_byte, F::from(*byte as u64)),
-                ("is_calldata", self.is_calldata, F::one()),
+                ("is_calldata", self.is_calldata, F::ONE),
             ] {
                 region.assign_advice(|| col_anno, col, *offset, || Value::known(col_val))?;
             }
@@ -2914,7 +2914,7 @@ impl<F: Field> TxCircuitConfig<F> {
             let mut curr_row: usize = 0;
 
             // initialize access list section rlc
-            let mut section_rlc = challenges.keccak_input().map(|_| F::zero());
+            let mut section_rlc = challenges.keccak_input().map(|_| F::ZERO);
             // depending on prev row, the accumulator advances by different magnitude
             let r20 = challenges.keccak_input().map(|f| f.pow([20, 0, 0, 0]));
             let r32 = challenges.keccak_input().map(|f| f.pow([32, 0, 0, 0]));
@@ -2956,11 +2956,11 @@ impl<F: Field> TxCircuitConfig<F> {
                         F::from(usize::from(Tag::AccessListAddress) as u64),
                     ),
                     ("is_final", self.is_final, F::from(is_final as u64)),
-                    ("is_access_list", self.is_access_list, F::one()),
+                    ("is_access_list", self.is_access_list, F::ONE),
                     (
                         "is_access_list_address",
                         self.is_access_list_address,
-                        F::one(),
+                        F::ONE,
                     ),
                 ] {
                     region.assign_advice(|| col_anno, col, *offset, || Value::known(col_val))?;
@@ -3014,11 +3014,11 @@ impl<F: Field> TxCircuitConfig<F> {
                             F::from(usize::from(Tag::AccessListStorageKey) as u64),
                         ),
                         ("is_final", self.is_final, F::from(is_final as u64)),
-                        ("is_access_list", self.is_access_list, F::one()),
+                        ("is_access_list", self.is_access_list, F::ONE),
                         (
                             "is_access_list_storage_key",
                             self.is_access_list_storage_key,
-                            F::one(),
+                            F::ONE,
                         ),
                     ] {
                         region.assign_advice(
@@ -3088,7 +3088,7 @@ impl<F: Field> TxCircuitConfig<F> {
 
         // fixed columns
         for (col_anno, col, col_val) in [
-            ("q_enable", self.tx_table.q_enable, F::one()),
+            ("q_enable", self.tx_table.q_enable, F::ONE),
             ("tag", self.tx_table.tag, F::from(usize::from(tag) as u64)),
         ] {
             region.assign_fixed(|| col_anno, col, offset, || Value::known(col_val))?;
@@ -3156,7 +3156,7 @@ impl<F: Field> TxCircuitConfig<F> {
                 || "q_enable",
                 self.tx_table.q_enable,
                 offset,
-                || Value::known(F::one()),
+                || Value::known(F::ONE),
             )?;
             region.assign_advice(
                 || "rlp_tag",
@@ -3167,24 +3167,19 @@ impl<F: Field> TxCircuitConfig<F> {
             region.assign_fixed(|| "tag", self.tx_table.tag, offset, || Value::known(tag))?;
             tag_chip.assign(region, offset, &CallData)?;
             // no need to assign tx_id_is_zero_chip for real prover as tx_id = 0
-            tx_id_is_zero_chip.assign(region, offset, Value::known(F::zero()))?;
+            tx_id_is_zero_chip.assign(region, offset, Value::known(F::ZERO))?;
             // no need to assign value_is_zero_chip for real prover as value = 0
-            value_is_zero_chip.assign(region, offset, Value::known(F::zero()))?;
-            tx_id_unchanged.assign(
-                region,
-                offset,
-                Value::known(F::zero()),
-                Value::known(F::zero()),
-            )?;
+            value_is_zero_chip.assign(region, offset, Value::known(F::ZERO))?;
+            tx_id_unchanged.assign(region, offset, Value::known(F::ZERO), Value::known(F::ZERO))?;
 
             for (col, value) in [
-                (self.tx_table.tx_id, F::zero()),
-                (self.tx_table.index, F::zero()),
-                (self.tx_table.value, F::zero()),
-                (self.is_final, F::one()),
-                (self.is_calldata, F::one()),
-                (self.calldata_gas_cost_acc, F::zero()),
-                (self.is_tx_id_zero, F::one()),
+                (self.tx_table.tx_id, F::ZERO),
+                (self.tx_table.index, F::ZERO),
+                (self.tx_table.value, F::ZERO),
+                (self.is_final, F::ONE),
+                (self.is_calldata, F::ONE),
+                (self.calldata_gas_cost_acc, F::ZERO),
+                (self.is_tx_id_zero, F::ONE),
             ] {
                 region.assign_advice(|| "", col, offset, || Value::known(value))?;
             }
@@ -3193,7 +3188,7 @@ impl<F: Field> TxCircuitConfig<F> {
                     || "lookup condition",
                     *col,
                     offset,
-                    || Value::known(F::zero()),
+                    || Value::known(F::ZERO),
                 )?;
             }
         }
@@ -3432,7 +3427,7 @@ impl<F: Field> TxCircuit<F> {
                 let mut total_l1_popped_after = start_l1_queue_index;
 
                 // 1. Empty entry
-                region.assign_fixed(|| "q_first", config.q_first, 0, || Value::known(F::one()))?;
+                region.assign_fixed(|| "q_first", config.q_first, 0, || Value::known(F::ONE))?;
                 config.assign_null_row(&mut region, &mut offset)?;
 
                 // 2. Assign all tx fields except for call data
@@ -3561,7 +3556,7 @@ impl<F: Field> TxCircuit<F> {
                     ("q_calldata_first", config.q_calldata_first, calldata_first_row),
                     ("q_calldata_last", config.q_calldata_last, calldata_last_row-1),
                 ] {
-                    region.assign_fixed(|| col_anno, col, row, || Value::known(F::one()))?;
+                    region.assign_fixed(|| col_anno, col, row, || Value::known(F::ONE))?;
                 }
 
                 Ok(tx_value_cells)
@@ -3723,7 +3718,7 @@ pub fn access_list_rlc<F: Field>(
     challenges: &Challenges<Value<F>>,
 ) -> Value<F> {
     if access_list.is_some() {
-        let mut section_rlc = challenges.keccak_input().map(|_| F::zero());
+        let mut section_rlc = challenges.keccak_input().map(|_| F::ZERO);
         let r20 = challenges.keccak_input().map(|f| f.pow([20, 0, 0, 0]));
         let r32 = challenges.keccak_input().map(|f| f.pow([32, 0, 0, 0]));
 
@@ -3743,6 +3738,6 @@ pub fn access_list_rlc<F: Field>(
 
         section_rlc
     } else {
-        Value::known(F::zero())
+        Value::known(F::ZERO)
     }
 }

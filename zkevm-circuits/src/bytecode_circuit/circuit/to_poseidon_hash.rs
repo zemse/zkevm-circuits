@@ -440,7 +440,7 @@ impl<F: Field, const BYTES_IN_FIELD: usize> ToHashBlockCircuitConfig<F, BYTES_IN
             || "assign bytecode with poseidon hash extension",
             |mut region| {
                 let mut offset = 0;
-                let mut row_input = F::zero();
+                let mut row_input = F::ZERO;
                 for bytecode in witness.iter() {
                     let bytecode_offset_begin = offset;
                     base_conf.assign_bytecode(
@@ -513,7 +513,7 @@ impl<F: Field, const BYTES_IN_FIELD: usize> ToHashBlockCircuitConfig<F, BYTES_IN
                 || format!("assign {name} {offset}"),
                 column,
                 offset,
-                || Value::known(F::zero()),
+                || Value::known(F::ZERO),
             )?;
         }
 
@@ -528,7 +528,7 @@ impl<F: Field, const BYTES_IN_FIELD: usize> ToHashBlockCircuitConfig<F, BYTES_IN
                 self.padding_shift,
                 F::from(256_u64).pow_vartime([BYTES_IN_FIELD as u64]),
             ),
-            ("field index header", self.field_index, F::one()),
+            ("field index header", self.field_index, F::ONE),
         ] {
             region.assign_advice(
                 || format!("assign {name} {offset}"),
@@ -569,7 +569,7 @@ impl<F: Field, const BYTES_IN_FIELD: usize> ToHashBlockCircuitConfig<F, BYTES_IN
                 let bytes_in_field_index_inv_f =
                     F::from((BYTES_IN_FIELD - bytes_in_field_index) as u64)
                         .invert()
-                        .unwrap_or(F::zero());
+                        .unwrap_or(F::ZERO);
                 let padding_shift_f =
                     F::from(256_u64).pow_vartime([(BYTES_IN_FIELD - bytes_in_field_index) as u64]);
                 let input_f = row.value * padding_shift_f + input_prev;
@@ -579,7 +579,7 @@ impl<F: Field, const BYTES_IN_FIELD: usize> ToHashBlockCircuitConfig<F, BYTES_IN
                 let field_index = (code_index % block_size) / BYTES_IN_FIELD + 1;
                 let field_index_inv_f = F::from((PoseidonTable::INPUT_WIDTH - field_index) as u64)
                     .invert()
-                    .unwrap_or(F::zero());
+                    .unwrap_or(F::ZERO);
 
                 trace!(
                     "bytecode_extend.set_row({}): cl:{} inp:{:?} bif:{} br:{} pd:{:x} fi:{}",
@@ -627,7 +627,7 @@ impl<F: Field, const BYTES_IN_FIELD: usize> ToHashBlockCircuitConfig<F, BYTES_IN
                 }
 
                 if field_border {
-                    F::zero()
+                    F::ZERO
                 } else {
                     input_f
                 }
@@ -635,7 +635,7 @@ impl<F: Field, const BYTES_IN_FIELD: usize> ToHashBlockCircuitConfig<F, BYTES_IN
             i if i == BytecodeFieldTag::Header as u32 => {
                 trace!("bytecode_extend.set_header_row({offset}): cl:{code_length}",);
                 self.set_header_row(region, code_length, offset)?;
-                F::zero()
+                F::ZERO
             }
             _ => unreachable!("unexpected tag number"),
         };

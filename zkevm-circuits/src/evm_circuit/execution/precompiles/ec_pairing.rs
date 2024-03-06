@@ -406,10 +406,9 @@ impl<F: Field> ExecutionGadget<F> for EcPairingGadget<F> {
                         keccak_rand.map(|r| rlc::value(input_bytes.iter().rev(), r)),
                     )?;
                     self.return_bytes_rlc
-                        .assign(region, offset, Value::known(F::zero()))?;
+                        .assign(region, offset, Value::known(F::ZERO))?;
                     // Pairing check output from ecPairing call.
-                    self.output
-                        .assign(region, offset, Value::known(F::zero()))?;
+                    self.output.assign(region, offset, Value::known(F::ZERO))?;
                 }
             }
         } else {

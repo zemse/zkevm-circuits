@@ -1110,12 +1110,12 @@ impl<F: Field> ExecutionGadget<F> for CallOpGadget<F> {
         } else {
             (
                 0,
-                Value::known(F::zero()),
-                Value::known(F::zero()),
-                Value::known(F::zero()),
-                Value::known(F::zero()),
-                Value::known(F::zero()),
-                Value::known(F::zero()),
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
+                Value::known(F::ZERO),
             )
         };
 

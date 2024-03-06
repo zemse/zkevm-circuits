@@ -104,7 +104,7 @@ impl<F: Field, const BIT_LIMIT: usize> RandPowRepresent<F, BIT_LIMIT> {
             .keccak_input()
             .map(|v| v.pow([exponent as u64, 0, 0, 0]));
         let value_should_assigned =
-            linked_value.unwrap_or_else(|| Value::known(F::one())) * pow_of_rand;
+            linked_value.unwrap_or_else(|| Value::known(F::ONE)) * pow_of_rand;
 
         self.pow_lookup.assign(region, offset, pow_of_rand)?;
 
@@ -388,7 +388,7 @@ impl<F: Field> ModExpInputs<F> {
         self.input_valid.assign(
             region,
             offset,
-            Value::known(if input_valid { F::one() } else { F::zero() }),
+            Value::known(if input_valid { F::ONE } else { F::ZERO }),
         )?;
 
         for (len, len_represent) in

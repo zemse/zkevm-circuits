@@ -133,13 +133,13 @@ impl<F: Field, const N: usize, const IS_BYTE: bool> ByteOrBitSizeGadget<F, N, IS
             byte_index.assign(
                 region,
                 offset,
-                Value::known(if i + 1 == size { F::one() } else { F::zero() }),
+                Value::known(if i + 1 == size { F::ONE } else { F::ZERO }),
             )?;
         }
         self.is_size_zero.assign(
             region,
             offset,
-            Value::known(if size == 0 { F::one() } else { F::zero() }),
+            Value::known(if size == 0 { F::ONE } else { F::ZERO }),
         )?;
         if size > 0 {
             let most_significant_nonzero_value = if IS_BYTE {
@@ -162,7 +162,7 @@ impl<F: Field, const N: usize, const IS_BYTE: bool> ByteOrBitSizeGadget<F, N, IS
             self.most_significant_nonzero_value_inverse.assign(
                 region,
                 offset,
-                Value::known(F::zero()),
+                Value::known(F::ZERO),
             )?;
         }
         Ok(())
