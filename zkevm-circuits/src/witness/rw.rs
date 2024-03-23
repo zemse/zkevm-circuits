@@ -734,7 +734,7 @@ impl Rw {
         }
     }
 
-    pub(crate) fn value_word(&self) -> U256 {
+    pub fn value_word(&self) -> U256 {
         match self {
             Self::Start { .. } => U256::zero(),
             Self::CallContext { value, .. } => *value,
