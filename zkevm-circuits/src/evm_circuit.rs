@@ -11,7 +11,7 @@ pub mod param;
 pub(crate) mod step;
 pub use step::ExecutionState;
 pub mod table;
-pub(crate) mod util;
+pub mod util;
 
 #[cfg(any(feature = "test", test))]
 pub(crate) mod test;

@@ -678,7 +678,7 @@ impl Rw {
         }
     }
 
-    pub(crate) fn value_assignment<F: Field>(&self, randomness: F) -> F {
+    pub fn value_assignment<F: Field>(&self, randomness: F) -> F {
         match self {
             Self::Start { .. } => F::zero(),
             Self::CallContext {
@@ -734,7 +734,7 @@ impl Rw {
         }
     }
 
-    pub(crate) fn value_word(&self) -> U256 {
+    pub fn value_word(&self) -> U256 {
         match self {
             Self::Start { .. } => U256::zero(),
             Self::CallContext { value, .. } => *value,

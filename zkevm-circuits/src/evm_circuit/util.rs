@@ -636,7 +636,7 @@ pub(crate) mod from_bits {
 
 /// Returns the random linear combination of the inputs.
 /// Encoding is done as follows: v_0 * R^0 + v_1 * R^1 + ...
-pub(crate) mod rlc {
+pub mod rlc {
     use std::ops::{Add, Mul};
 
     use crate::util::Expr;
@@ -651,7 +651,7 @@ pub(crate) mod rlc {
         }
     }
 
-    pub(crate) fn value<'a, F: Field, I>(values: I, randomness: F) -> F
+    pub fn value<'a, F: Field, I>(values: I, randomness: F) -> F
     where
         I: IntoIterator<Item = &'a u8>,
         <I as IntoIterator>::IntoIter: DoubleEndedIterator,
