@@ -115,7 +115,8 @@ pub struct SuperCircuitConfig<F: Field> {
     poseidon_table: PoseidonTable,
     u8_table: U8Table,
     u16_table: U16Table,
-    evm_circuit: EvmCircuitConfig<F>,
+    /// EVM Circuit
+    pub evm_circuit: EvmCircuitConfig<F>,
     state_circuit: StateCircuitConfig<F>,
     tx_circuit: TxCircuitConfig<F>,
     // sig_circuit: SigCircuitConfig<F>,

@@ -43,7 +43,7 @@ pub struct EvmCircuitConfig<F> {
     pub(crate) execution: Box<ExecutionConfig<F>>,
     // External tables
     tx_table: TxTable,
-    rw_table: RwTable,
+    pub rw_table: RwTable,
     bytecode_table: BytecodeTable,
     block_table: BlockTable,
     copy_table: CopyTable,
