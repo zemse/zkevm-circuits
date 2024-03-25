@@ -1055,6 +1055,7 @@ fn queries<F: Field>(meta: &mut VirtualCells<'_, F>, c: &StateCircuitConfig<F>) 
             value: meta.query_advice(c.rw_table.value, Rotation::cur()),
             value_prev: meta.query_advice(c.rw_table.value, Rotation::prev()),
             value_prev_column: meta.query_advice(c.rw_table.value_prev, Rotation::cur()),
+            is_state: meta.query_advice(c.rw_table.is_state, Rotation::cur()),
         },
         // mpt_update_table: MptUpdateTableQueries {
         //     q_enable: meta.query_fixed(c.mpt_table.q_enable, Rotation::cur()),

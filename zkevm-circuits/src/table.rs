@@ -602,6 +602,8 @@ pub struct RwTable {
     pub aux1: Column<Advice>,
     /// Aux2 (Committed Value)
     pub aux2: Column<Advice>,
+    /// Is this a state related RW operation
+    pub is_state: Column<Advice>,
 }
 
 impl<F: Field> LookupTable<F> for RwTable {
@@ -619,6 +621,7 @@ impl<F: Field> LookupTable<F> for RwTable {
             self.value_prev.into(),
             self.aux1.into(),
             self.aux2.into(),
+            // self.is_state.into(), // some lookup fails after adding this
         ]
     }
 
@@ -636,6 +639,7 @@ impl<F: Field> LookupTable<F> for RwTable {
             String::from("value_prev"),
             String::from("aux1"),
             String::from("aux2"),
+            // String::from("is_state"), // some lookup fails after adding this
         ]
     }
 }
@@ -657,6 +661,7 @@ impl RwTable {
             // TODO check in a future review
             aux1: meta.advice_column_in(SecondPhase),
             aux2: meta.advice_column_in(SecondPhase),
+            is_state: meta.advice_column(),
         }
     }
     fn assign<F: Field>(
@@ -683,6 +688,7 @@ impl RwTable {
             (self.value_prev, row.value_prev),
             (self.aux1, row.aux1),
             (self.aux2, row.aux2),
+            (self.is_state, row.is_state),
         ] {
             region.assign_advice(|| "assign rw row on rw table", column, offset, || value)?;
         }

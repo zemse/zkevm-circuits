@@ -28,6 +28,7 @@ pub struct RwTableQueries<F: Field> {
     pub value_prev: Expression<F>, // meta.query(value, Rotation::prev())
     pub value_prev_column: Expression<F>, /* meta.query(prev_value, Rotation::cur())
                                     * TODO: aux1 and aux2 */
+    pub is_state: Expression<F>,
 }
 
 #[derive(Clone)]
@@ -292,6 +293,13 @@ impl<F: Field> ConstraintBuilder<F> {
             AccountFieldTag::CodeHash.expr(),
         );
 
+        // enforce is_state to be for all account storage entries
+        self.require_equal(
+            "is_state should be 1",
+            q.rw_table.is_state.clone(),
+            1.expr(),
+        );
+
         // value = 0 means the leaf doesn't exist. 0->0 transition requires a
         // non-existing proof.
         let is_non_exist = q.is_non_exist();
@@ -419,6 +427,13 @@ impl<F: Field> ConstraintBuilder<F> {
         self.require_zero(
             "storage_key is 0 for Account",
             q.rw_table.storage_key.clone(),
+        );
+
+        // enforce is_state to be for all account entries
+        self.require_equal(
+            "is_state should be 1",
+            q.rw_table.is_state.clone(),
+            1.expr(),
         );
 
         // mpt circuit will verify correctness of mpt proof type and therefore the field
