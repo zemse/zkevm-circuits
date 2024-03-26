@@ -453,7 +453,7 @@ impl<F: Field> Circuit<F> for EvmCircuit<F> {
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let challenges_expr = challenges.exprs(meta);
         let rw_table = RwTable::construct(meta);
         let tx_table = TxTable::construct(meta);

@@ -90,7 +90,10 @@ impl MockChallenges {
 
 impl Challenges {
     /// Construct `Challenges` by allocating challenges in specific phases.
-    pub fn construct<F: Field>(meta: &mut ConstraintSystem<F>) -> Self {
+    pub fn construct<F: Field>(
+        meta: &mut ConstraintSystem<F>,
+        evm_word: Option<Challenge>,
+    ) -> Self {
         #[cfg(any(not(feature = "onephase"), feature = "test", test))]
         let _dummy_cols = [
             meta.advice_column(),
@@ -99,7 +102,7 @@ impl Challenges {
         ];
 
         Self {
-            evm_word: meta.challenge_usable_after(FirstPhase),
+            evm_word: evm_word.unwrap_or_else(|| meta.challenge_usable_after(FirstPhase)),
             keccak_input: meta.challenge_usable_after(FirstPhase),
             lookup_input: meta.challenge_usable_after(SecondPhase),
         }

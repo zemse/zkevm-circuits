@@ -114,7 +114,7 @@ impl<F: Field, G: MathGadgetContainer<F>> Circuit<F> for UnitTestMathGadgetBaseC
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let challenges_exprs = challenges.exprs(meta);
 
         let q_usable = meta.selector();

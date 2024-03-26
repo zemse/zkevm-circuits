@@ -21,7 +21,7 @@ impl<F: Field, const XI_0: i64> Circuit<F> for EccCircuit<F, XI_0> {
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
         let ecc_table = EccTable::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let challenge_exprs = challenges.exprs(meta);
         (
             EccCircuitConfig::new(

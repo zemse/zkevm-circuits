@@ -171,7 +171,7 @@ impl<F: Field> Circuit<F> for TxCircuitTester<F> {
         let sig_table = SigTable::construct(meta);
         let u8_table = U8Table::construct(meta);
         let u16_table = U16Table::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
 
         let config = {
             let challenges = challenges.exprs(meta);

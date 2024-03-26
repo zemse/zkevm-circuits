@@ -23,7 +23,7 @@ impl<F: Field> Circuit<F> for ExpCircuit<F> {
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
         let exp_table = ExpTable::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let u16_table = U16Table::construct(meta);
         (
             ExpCircuitConfig::new(

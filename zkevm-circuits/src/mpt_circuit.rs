@@ -179,7 +179,7 @@ impl Circuit<Fr> for MptCircuit<Fr> {
     }
 
     fn configure(meta: &mut ConstraintSystem<Fr>) -> Self::Config {
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let poseidon_table = PoseidonTable::construct(meta);
         let mpt_table = MptTable::construct(meta);
 

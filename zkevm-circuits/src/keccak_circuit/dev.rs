@@ -23,7 +23,7 @@ impl<F: Field> Circuit<F> for KeccakCircuit<F> {
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
         let keccak_table = KeccakTable::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
 
         let config = {
             let challenges = challenges.exprs(meta);

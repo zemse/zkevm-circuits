@@ -27,7 +27,7 @@ where
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
         let rw_table = RwTable::construct(meta);
         let mpt_table = MptTable::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
 
         let config = {
             let challenges = challenges.exprs(meta);

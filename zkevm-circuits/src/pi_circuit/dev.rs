@@ -89,7 +89,7 @@ impl<F: Field, const MAX_TXS: usize, const MAX_CALLDATA: usize, const MAX_INNER_
         let block_table = BlockTable::construct(meta);
         let tx_table = TxTable::construct(meta);
         let keccak_table = KeccakTable::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let challenge_exprs = challenges.exprs(meta);
         (
             PiCircuitConfig::new(

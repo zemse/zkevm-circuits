@@ -38,7 +38,7 @@ impl<F: Field> Circuit<F> for BytecodeCircuit<F> {
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
         let bytecode_table = BytecodeTable::construct(meta);
         let keccak_table = KeccakTable::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         #[cfg(feature = "poseidon-codehash")]
         let poseidon_table = PoseidonTable::construct(meta);
 

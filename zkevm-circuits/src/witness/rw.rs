@@ -10,6 +10,7 @@ use eth_types::{Address, Field, ToLittleEndian, ToScalar, Word, U256};
 use halo2_proofs::{circuit::Value, halo2curves::bn256::Fr};
 use itertools::Itertools;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
+use serde::Serialize;
 
 use crate::{
     evm_circuit::util::rlc,
@@ -221,7 +222,7 @@ pub type RwKey = (u64, usize, Address, u64, Word);
 
 /// Read-write records in execution. Rws are used for connecting evm circuit and
 /// state circuits.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub enum Rw {
     /// Start
     Start { rw_counter: usize },

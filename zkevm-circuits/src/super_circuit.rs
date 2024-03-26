@@ -100,7 +100,7 @@ use eth_types::{geth_types::GethData, Field};
 use halo2_proofs::{
     circuit::{Layouter, SimpleFloorPlanner, Value},
     halo2curves::bn256::Fr,
-    plonk::{Circuit, ConstraintSystem, Error},
+    plonk::{Challenge, Circuit, ConstraintSystem, Error},
 };
 use itertools::Itertools;
 // use snark_verifier_sdk::CircuitExt;
@@ -745,7 +745,7 @@ impl<
     }
 
     fn configure(meta: &mut ConstraintSystem<Fr>) -> Self::Config {
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         (
             SuperCircuitConfig::new(
                 meta,
@@ -782,8 +782,29 @@ impl<
         const MOCK_RANDOMNESS: u64,
     > SuperCircuit<Fr, MAX_TXS, MAX_CALLDATA, MAX_INNER_BLOCKS, MOCK_RANDOMNESS>
 {
-    /// doc
-    pub fn synthesize_2(
+    /// Custom configuration for SuperCircuit
+    pub fn configure_custom(
+        meta: &mut ConstraintSystem<Fr>,
+        evm_word_challenge: Option<Challenge>,
+    ) -> (SuperCircuitConfig<Fr>, Challenges) {
+        let challenges = Challenges::construct(meta, evm_word_challenge);
+        (
+            SuperCircuitConfig::new(
+                meta,
+                SuperCircuitConfigArgs {
+                    max_txs: MAX_TXS,
+                    max_calldata: MAX_CALLDATA,
+                    max_inner_blocks: MAX_INNER_BLOCKS,
+                    mock_randomness: MOCK_RANDOMNESS,
+                    challenges,
+                },
+            ),
+            challenges,
+        )
+    }
+
+    /// Custom synthesize for SuperCircuit
+    pub fn synthesize_custom(
         &self,
         (config, challenges): <SuperCircuit<
             Fr,
@@ -799,7 +820,21 @@ impl<
         config.u8_table.load(layouter)?;
         config.u16_table.load(layouter)?;
 
-        self.synthesize_sub(&config, &challenges, layouter)
+        self.synthesize_sub(&config, &challenges, layouter)?;
+
+        // TODO@zemse remove this
+        layouter.assign_region(
+            || "temp",
+            |mut region| {
+                region.name_column(|| "rw is_state", config.evm_circuit.rw_table.is_state);
+                region.name_column(|| "rw address", config.evm_circuit.rw_table.address);
+                region.name_column(|| "rw field_tag", config.evm_circuit.rw_table.field_tag);
+                region.name_column(|| "rw storage_key", config.evm_circuit.rw_table.storage_key);
+                region.name_column(|| "rw value", config.evm_circuit.rw_table.value);
+
+                Ok(())
+            },
+        )
     }
 }
 

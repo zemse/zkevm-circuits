@@ -22,7 +22,7 @@ impl<F: Field> Circuit<F> for RlpCircuit<F, Transaction> {
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
         let rlp_table = RlpFsmRlpTable::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let challenge_exprs = challenges.exprs(meta);
         let u8_table = U8Table::construct(meta);
 

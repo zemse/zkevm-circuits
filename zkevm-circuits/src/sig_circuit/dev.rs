@@ -19,7 +19,7 @@ impl<F: Field> SigCircuitTesterConfig<F> {
     pub(crate) fn new(meta: &mut ConstraintSystem<F>) -> Self {
         let keccak_table = KeccakTable::construct(meta);
         let sig_table = SigTable::construct(meta);
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let challenges_expr = challenges.exprs(meta);
         let sign_verify = SigCircuitConfig::new(
             meta,

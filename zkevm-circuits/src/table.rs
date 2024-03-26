@@ -36,6 +36,7 @@ use halo2_proofs::{
     plonk::{Advice, Any, Column, ConstraintSystem, Error, Expression, Fixed, VirtualCells},
     poly::Rotation,
 };
+use serde::Serialize;
 // use snark_verifier::util::arithmetic::PrimeCurveAffine;
 
 use std::iter::repeat;
@@ -472,7 +473,7 @@ impl From<RwTableTag> for usize {
 }
 
 /// Tag for an AccountField in RwTable
-#[derive(Clone, Copy, Debug, EnumIter, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, EnumIter, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 pub enum AccountFieldTag {
     /// Nonce field
     Nonce,
@@ -490,7 +491,7 @@ pub enum AccountFieldTag {
 impl_expr!(AccountFieldTag);
 
 /// Tag for a TxLogField in RwTable
-#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter, Serialize)]
 pub enum TxLogFieldTag {
     /// Address field
     Address = 1,
@@ -502,7 +503,7 @@ pub enum TxLogFieldTag {
 impl_expr!(TxLogFieldTag);
 
 /// Tag for a TxReceiptField in RwTable
-#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter, EnumCount)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter, EnumCount, Serialize)]
 pub enum TxReceiptFieldTag {
     /// Tx result
     PostStateOrStatus = 1,
@@ -514,7 +515,7 @@ pub enum TxReceiptFieldTag {
 impl_expr!(TxReceiptFieldTag);
 
 /// Tag for a CallContextField in RwTable
-#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter, Serialize)]
 pub enum CallContextFieldTag {
     /// RwCounterEndOfReversion
     RwCounterEndOfReversion = 1,

@@ -68,7 +68,7 @@ impl Circuit<Fr> for MyCircuit {
         };
         meta.enable_constant(dev_table.s_enable);
 
-        let challenges = Challenges::construct(meta);
+        let challenges = Challenges::construct(meta, None);
         let chng = challenges.exprs(meta).keccak_input();
         (CircuitConfig::configure(meta, dev_table, chng), challenges)
     }
